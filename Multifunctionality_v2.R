@@ -2,7 +2,7 @@
 setwd(choose.dir())
 
 #Load libraries (first install them of course)
-library(xlsx)
+#library(xlsx)
 library(FD)
 library(vegan)
 library(ggplot2)
