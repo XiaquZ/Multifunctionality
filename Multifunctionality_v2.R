@@ -130,12 +130,12 @@ for (i in 1:(t-1)){
   thresholds<-cbind(thresholds,thresholds[,1])
 }
 
-compare<-sweep(thresholds,MARGIN=2,maxf,'*')
+compare<-sweep(thresholds,MARGIN=2,maxf,'*') #multiplies thresholds by the maxf in column-wise. sweep ()means element-wise
 colnames(compare)<-colnames(CWM)
 rownames(compare)<-threshold
 
 for (i in 1:((threshmax-threshmin+0.01)*100)) {
-  y<-adply(CWM,1, function(x) sum(x>=compare[i,], na.rm=TRUE))
+  y<-adply(CWM,1, function(x) sum(x>=compare[i,], na.rm=TRUE)) #applied function to CWM row-wise
   MFthres<-cbind(MFthres,y[,2])
 }
 
