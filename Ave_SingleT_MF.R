@@ -5,6 +5,11 @@ library(ggplot2)
 library(gridExtra)
 library(reshape2)
 library(plyr)
+
+##Load data##
+
+load("C:/Users/u0142858/OneDrive - KU Leuven/KUL/Teaching/MasterThesis/ZanderVermeir/RData/ClimateOffset_MIs_XiquZ_V3.RData")
+
 #################################################################
 #####Average MF
 
