@@ -1,111 +1,81 @@
-#Load libraries (first install them of course)
-library(FD)
-library(vegan)
-library(ggplot2)
-library(gridExtra)
-library(reshape2)
-library(plyr)
+####Load packages####
+library(terra)
+library(terra)
 
-##Load data##
+MI1 <- rast('/lustre1/scratch/348/vsc34871/input/MI_MaxTOffset.tif')
+MI2 <- rast('/lustre1/scratch/348/vsc34871/input/MI_MinTOffset.tif')
+MI3 <- rast('/lustre1/scratch/348/vsc34871/input/MI_ForestBVoCC_10kmSR_25m.tif')
+MI4 <- rast('/lustre1/scratch/348/vsc34871/input/MI_ForestFVoCC_10kmSR_25m.tif')
+MI5 <- rast("/lustre1/scratch/348/vsc34871/input/MI_WarmingMagnitude.tif")
+##Make raster stacks.##
+output_stack <- c(MI1, MI2, MI3, MI4,MI5)
+print(output_stack)
 
-load("C:/Users/u0142858/OneDrive - KU Leuven/KUL/Teaching/MasterThesis/ZanderVermeir/RData/ClimateOffset_MIs_XiquZ_V3.RData")
+####Use single threshold mutifunctionality to count the MIs that beyond the threshold values in each cell.####
+# use parallel with app() from terra package to sum the number of MIs greater than threshold.
+fun1 <- function(i) { sum(i > 0.5) }
+MF_singleT <- app(output_stack, \(i) fun1(i))
+writeRaster(MF_singleT, filename = "D:/PhD/Data/Output/MF_singleThreshold_4MIs_EU_25m_EPSG3035.tif", overwrite = TRUE)
+names(MF_singleT) <- 'MF_singleT_5MIs'
 
-#################################################################
-#####Average MF
 
-#Z-standardization following Byrnes et al., 2014
-CWM_stand<-decostand(CWM, "max", MARGIN=2)
+##Single threshold 0.6
+parallel_fun2 <- function(i) { sum(i > 0.6) }
+MF_singleT0.6 <- app(output_stack, fun=function(i, ff) ff(i), cores =22, ff=parallel_fun2)#with core>1, things can be speed up.
 
-z<-cbind(SR, CWM_stand)
-z<-as.data.frame(z)
-plotaverage<-melt(z,id=c("SR","LU"))
+names(MF_singleT0.6) <- 'MF_singleT0.6_4MIs'
+writeRaster(MF_singleT0.6, filename = "D:/PhD/Data/Output/MF_singleThreshold0.6_4MIs_EU_25m_EPSG3035.tif", overwrite = TRUE)
 
-#plot standardized functions on common scale
-ggplot(aes(x=SR, y=value),data=plotaverage)+geom_point(size=2.5)+
-  facet_grid(~variable) +
-  theme_bw(base_size=15) +
-  stat_smooth(method="lm", colour="black", size=1.5) +
-  xlab("\nSpecies richness") + ylab("Average value of standardized functions\n")
+##Single threshold 0.4
+parallel_fun3 <- function(i) { sum(i > 0.4) }
+MF_singleT0.4 <- app(output_stack, fun=function(i, ff) ff(i), cores =22, ff=parallel_fun3)#with core>1, things can be speed up.
+names(MF_singleT0.4) <- 'MF_singleT0.4_4MIs'
+writeRaster(MF_singleT0.4, filename = "D:/PhD/Data/Output/MF_singleThreshold0.4_4MIs_EU_25m_EPSG3035.tif", overwrite = TRUE)
 
-#Calculate MFav and species richness
-MFav<-rowMeans(CWM_stand, na.rm = TRUE)
-MFav<-as.data.frame(MFav)
-MF<-cbind(SR,LU, MFav)
-write.xlsx2(MF, col.names=TRUE, row.names=TRUE,"MF.xlsx")
+##Single threshold 0.9
+parallel_fun0.9 <- function(i) { sum(i > 0.9) }
+MF_singleT0.9 <- app(output_stack, fun=function(i, ff) ff(i), cores =22, ff=parallel_fun3)#with core>1, things can be speed up.
+names(MF_singleT0.9) <- 'MF_singleT0.9_4MIs'
+writeRaster(MF_singleT0.9, filename = "D:/PhD/Data/Output/MF_singleThreshold0.9_4MIs_EU_25m_EPSG3035.tif", overwrite = TRUE)
 
-#Statistical fit
-lm<-lm(MFav~SR, data=MF)
-lm2<-lm(MFav~SR+LU, data=MF)
-lm3<-lm(MFav~SR+LU+SR*LU, data=MF)
+####plotting MF.####
+s1 <- spatSample(MF_av, 1000, method="random", replace=FALSE, na.rm=TRUE, 
+                 as.raster=FALSE, as.df=TRUE, as.points=FALSE, values=TRUE)
+s2 <- spatSample(MF_singleT, 1000, method="random", replace=FALSE, na.rm=TRUE, 
+                 as.raster=FALSE, as.df=TRUE, as.points=FALSE, values=TRUE)
+stackMF <- c(MF_av, MF_singleT)
+s3 <- spatSample(stackMF, 10000, method="random", replace=FALSE, na.rm=TRUE, 
+                 as.raster=FALSE, as.df=TRUE, as.points=FALSE, values=TRUE)
+plot(s3)
+library(graphics)
+y_label <- "MF_singleT_4MIs"
+x_label <- "MF_average_4MIs"
+smoothScatter(s3$MF_average_4MIs, s3$MF_singleT_4MIs, pch = 19,
+              transformation = function(x) x ^ 0.3,
+              nrpoints=nrow(s3),
+              xlim = c(0 , 1))
 
-#plot average MF
-p2<-anova(lm(MFav ~ SR, data=MF))[1,5]
-r22<-summary(lm(MFav ~ SR, data=MF))$r.squared
-labels<-paste("p=",round(p2,3), "R^2=",round(r22,2),sep=" ")
-labels2<-as.data.frame(labels)
 
-ggplot(MF, aes(x=SR, y=MFav, shape = LU))+geom_point(size=2.5)+
-  theme_bw(base_size=15)+
-  stat_smooth(method="lm", size=1.5, se=FALSE, aes(colour = LU)) +
-  scale_x_continuous(breaks=c(2,4,6,8))+
-  geom_text(data=labels2, aes(8,0.385,label=labels)) +
-  xlab("\nSpecies richness") + ylab("Average value of standardized functions\n")
+# Add x-axis label
+text(x = 0.5, y = par()$usr[3] - 0.1 * (par()$usr[4] - par()$usr[3]),
+     labels = x_label, pos = 1)
+# Add y-axis label
+text(x = par()$usr[1] - 0.05 * (par()$usr[2] - par()$usr[1]), y = par()$usr[4],
+     labels = y_label, pos = 2, srt = 90)
 
-#Export figure as high resolution tiff
-tiff(file = "SR~MFav.tiff", width = 2700, height = 2000, units = "px", res = 300)
-ggplot(MF, aes(x=SR, y=MFav))+geom_point(aes(shape = factor(LU)), size=2.5)+
-  theme_bw(base_size=15)+
-  stat_smooth(method="lm", size=1.5, colour="black") +
-  scale_x_continuous(breaks=c(2,4,6,8))+
-  geom_text(data=labels2, aes(8,0.385,label=labels)) +
-  xlab("\nSpecies richness") + ylab("Average value of standardized functions\n")
-dev.off()
+# Add legend
+legend("topright", legend = "Density", fill = "white", border = "black")
 
-#################################################################
-#####Single threshold-based MF
+corr <- cor(s3$MF_average_4MIs,s3$MF_singleT_4MIs, method = "spearman")
 
-MFthres<-SR
-m<-as.numeric(dim(sample)[[1]])
-t<-as.numeric(dim(traits)[[2]])
-maxf <-apply(CWM, 2,max, na.rm = TRUE)
-maxf<-as.matrix(t(maxf))
-threshmin<-0.01
-threshmax<-0.75
-threshstep<-0.01
-threshold <- seq(threshmin, threshmax,threshstep)
-thresholds<-as.matrix(threshold)
+####Test to add the labels and legend...
+par(mfrow=c(1,2))
+set.seed(3)
+x1 = rnorm(1000)
+y1 = rnorm(1000)
+smoothScatter(x1,y1,nrpoints=length(x1),cex=3)
 
-for (i in 1:(t-1)){
-  thresholds<-cbind(thresholds,thresholds[,1])
-}
+x2 = rnorm(200)
+y2 = rnorm(200)
+smoothScatter(x2,y2,nrpoints=length(x2),cex=3,colramp=colorRampPalette(c("white","red")))
 
-compare<-sweep(thresholds,MARGIN=2,maxf,'*') #multiplies thresholds by the maxf in column-wise. sweep ()means element-wise
-colnames(compare)<-colnames(CWM)
-rownames(compare)<-threshold
-
-for (i in 1:((threshmax-threshmin+0.01)*100)) {
-  y<-adply(CWM,1, function(x) sum(x>=compare[i,], na.rm=TRUE)) #applied function to CWM row-wise
-  MFthres<-cbind(MFthres,y[,2])
-}
-
-colnames(MFthres)<-c("SR",rownames(compare))
-u<-melt(MFthres, id="SR")
-u$percent<-as.numeric(as.character(u$variable))
-
-#Fit single thresholds
-glm<-glm(value ~ SR, data=subset(u, u$percent==0.80), family=quasipoisson(link="identity"))
-
-#plot 20,40,60 and 80%
-qw <- function(...) {
-  sapply(match.call()[-1], deparse)
-}
-gcPlot<-subset(u, u$variable %in% qw(0.2, 0.4, 0.6, 0.8))
-gcPlot$percentage<-paste(100*gcPlot$percent, "%", sep="")
-
-qplot(SR, value, data=gcPlot, facets=~percentage) +
-  stat_smooth(method="glm", method.args=list(family=quasipoisson(link="identity")), colour="red", lwd=1.2) +
-  ylab(expression("Number of functions >= threshold")) +
-  xlab("Species richness") +
-  theme_bw(base_size=14) +
-  geom_text(data=data.frame(percentage = unique(gcPlot$percentage), lab = paste(letters[1:4], ")", sep=""),
-                            SR=9, value=16), mapping=aes(x=SR, y=value, label=lab))
