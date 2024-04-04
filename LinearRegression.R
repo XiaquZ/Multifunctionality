@@ -1,5 +1,5 @@
 ##Load the R data and inspect the data.
-load('I:/DATA/output/MF/clean_data_sample.RData')
+load('I:/DATA/output/MF/10000samples.RData')
 unique(clean_s$type)
 mf_av <- unique(clean_s$mean)
 mf_singT <- unique(clean_s$MF_singleT_0.8)
@@ -66,4 +66,3 @@ poisson01 <-glm(formula = MF_av ~ cover + coast + latitude +
                   data = data.sampled)
 summary(poisson01)
 poisson01_resi <- poisson01$residuals
-
