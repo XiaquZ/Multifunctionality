@@ -66,3 +66,34 @@ poisson01 <-glm(formula = MF_av ~ cover + coast + latitude +
                   data = data.sampled)
 summary(poisson01)
 poisson01_resi <- poisson01$residuals
+
+####Use DHARMa package for residual diagnostics.
+library(DHARMa)
+library(lme4)
+load('I:/DATA/output/MF/10000samples.RData')
+fittedModel <- glmer(MF_av ~ cover + coast + latitude +
+                 elevation + relative_elevation + slope + (1|type), 
+                 family = "poisson", data = data.sampled)
+
+#Standardized X variables.
+data.sampled$coast <- scale(data.sampled$coast)
+data.sampled$cover <- scale(data.sampled$cover)
+data.sampled$latitude <-scale(data.sampled$latitude)
+data.sampled$elevation <- scale(data.sampled$elevation)
+data.sampled$eastness <- scale(data.sampled$eastness)
+data.sampled$northness <- scale(data.sampled$northness)
+data.sampled$relative_elevation <- scale(data.sampled$relative_elevation)
+data.sampled$slope <- scale(data.sampled$slope)
+head(data.sampled)
+hist(data.sampled$coast)
+
+##Test the dispersion
+plot(coast ~ MF_av, 
+     xlab = "MF_av", ylab = "Standardized latitude", data = data.sampled)
+poisson01 <-glm(formula = MF_av ~ cover + coast + latitude +
+                 elevation + relative_elevation + slope, family = "poisson",
+                  data = data.sampled)
+summary(poisson01)
+simulationOutput <- simulateResiduals(fittedModel = poisson01)
+plot(simulationOutput)
+testDispersion(simulationOutput)
