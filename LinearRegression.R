@@ -71,9 +71,6 @@ poisson01_resi <- poisson01$residuals
 library(DHARMa)
 library(lme4)
 load('I:/DATA/output/MF/10000samples.RData')
-fittedModel <- glmer(MF_av ~ cover + coast + latitude +
-                 elevation + relative_elevation + slope + (1|type), 
-                 family = "poisson", data = data.sampled)
 
 #Standardized X variables.
 data.sampled$coast <- scale(data.sampled$coast)
@@ -87,13 +84,103 @@ data.sampled$slope <- scale(data.sampled$slope)
 head(data.sampled)
 hist(data.sampled$coast)
 
-##Test the dispersion
+
+##glmer function
+#fittedModel <- glmer(MF_av ~ coast +  (1|type) , 
+#                    family = "poisson", data = data.sampled)
+#simulationOutput <- simulateResiduals(fittedModel = fittedModel)
+#plot(simulationOutput)
+
+##Fit the model
+## requires glmmTMB
+library(glmmTMB)
+fittedModel <- glmmTMB(MF_av ~ type + latitude + coast + cover +elevation + eastness +
+                        northness +relative_elevation + slope, 
+                         family = "poisson", data = data.sampled)
+summary(fittedModel)
+
+####Test the poisson model:
 plot(coast ~ MF_av, 
      xlab = "MF_av", ylab = "Standardized latitude", data = data.sampled)
-poisson01 <-glm(formula = MF_av ~ cover + coast + latitude +
-                 elevation + relative_elevation + slope, family = "poisson",
-                  data = data.sampled)
+poisson01 <-glm(MF_av ~ latitude + coast + cover +elevation + eastness +
+                        northness +relative_elevation + slope, 
+                         family = "poisson", data = data.sampled)
+
 summary(poisson01)
 simulationOutput <- simulateResiduals(fittedModel = poisson01)
+plot(simulationOutput) #Looks like underdispersion. check zero-inflation
+
+#test for zero-inflation.
+testZeroInflation(simulationOutput) #There is no zero-inflation
+# requires glmmTMB
+fittedModel <- glmmTMB(MF_av ~ latitude + coast + cover +elevation + eastness +
+                        northness +relative_elevation + slope, 
+                        ziformula = ~1 , family = "poisson", data = data.sampled)
+summary(fittedModel) 
+
+simulationOutput <- simulateResiduals(fittedModel = fittedModel)
 plot(simulationOutput)
+#Test the non-independence of the data (e.g. temporal autocorrelation, 
+#check via DHARMa:: testTemporalAutocorrelation) that your predictors can use to overfit, 
+#or that your data-generating process is simply not a Poisson process.
+
+
+#Dispersion
 testDispersion(simulationOutput)
+
+#Exact p-value for the quantile lines
+testQuantiles(simulationOutput)
+
+#test for categorical predictors
+testCategorical(simulationOutput, catPred = data.sampled$type)
+##one-sample Kolmogorov-Smirnov test determine whether the data is ditributed 
+#significantly from a uniformity distribution per box. 
+#here the 'type' does not follow uniformity.
+#And a Levene's test for homogeneity of variances between boxes. A positive result will be in red.
+
+#####By default, plotResiduals plots against predicted values. 
+####However, you can also use it to plot residuals against a specific other predictors (highly recommend).
+#If the predictor is a factor, or if there is just a small number of observations on the x axis,
+#plotResiduals will plot a box plot with additional tests instead of a scatter plot.
+plotResiduals(simulationOutput, data.sampled$type) 
+plotResiduals(simulationOutput, data.sampled$latitude)
+
+###################################
+####Try the quansibinomial model.##
+###################################
+binomial01 <-glm(MF_av ~ latitude + coast + cover +elevation + eastness +
+                        northness +relative_elevation + slope, 
+                         family = "quasibinomial", data = data.sampled)
+summary(binomial01)
+#simulationOutput <- simulateResiduals(fittedModel = binomial01) #!DHARMa can't run quansi model.
+
+####quasipossion####
+quansipois <-glm(MF_av ~ latitude + coast + cover +elevation + eastness +
+                        northness +relative_elevation + slope, 
+                         family = "quasipoisson", data = data.sampled)
+summary(quansipois)
+#simulationOutput <- simulateResiduals(fittedModel = quansipois) #!DHARMa can't run quansi model.
+
+
+#########################
+####Negative binomial####
+#########################
+library(MASS)
+negbino <- glm.nb(MF_av ~ latitude + coast + cover +elevation + eastness +
+                        northness +relative_elevation + slope, 
+                          data = data.sampled)
+summary(negbino)
+simulationOutput <- simulateResiduals(fittedModel = negbino)
+plot(simulationOutput)
+
+#Still look overfitting and underdispersion.
+
+####Binomial####
+binomial02 <-glm(MF_av ~ latitude + coast + cover +elevation + eastness +
+                        northness +relative_elevation + slope, 
+                         family = "binomial", data = data.sampled)
+summary(binomial02)
+simulationOutput <- simulateResiduals(fittedModel = binomial02)
+plot(simulationOutput)
+#A bit better.
+
