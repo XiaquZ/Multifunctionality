@@ -8,8 +8,8 @@ load('I:/DATA/output/MF/standardized10000samples_xy.RData')
 ###########################
 plot(coast ~ MF_av, 
      xlab = "MF_av", ylab = "Standardized latitude", data = data.sampled)
-pois <-glm(MF_av ~ latitude + coast + cover +elevation + eastness +
-                        northness +relative_elevation + slope, 
+pois <-glm(mi_fvocc ~ latitude + coast + cover +elevation + eastness +
+                        northness +relative_elevation + slope + type, 
                          family = "poisson", data = data.sampled)
 
 summary(pois)

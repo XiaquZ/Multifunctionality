@@ -34,7 +34,13 @@ boxplot(cover~MF_av, data = data.sampled,
 library(DHARMa)
 library(lme4)
 library(glmmTMB)
-load('I:/DATA/output/MF/10000samples.RData')
+load('I:/DATA/output/MF/10000samples_xy.RData')
+twi_sample <- extract(twi,xy)
+head(twi_sample)
+data.sampled$TWI <- twi_sample$TWI
+data.sampled$MF_av <- round(data.sampled$MF_av, digits = 2)
+#save data with adding twi
+save(data.sampled, file = 'I:/DATA/output/MF/RAW10000samples_xy.RData')
 
 #Standardized X variables.
 data.sampled$coast <- scale(data.sampled$coast)
@@ -46,9 +52,9 @@ data.sampled$northness <- scale(data.sampled$northness)
 data.sampled$relative_elevation <- scale(data.sampled$relative_elevation)
 data.sampled$slope <- scale(data.sampled$slope)
 data.sampled$type <- as.factor(data.sampled$type)
-save(data.sampled, file = 'I:/DATA/output/MF/standardized10000samples_xy.RData')
+data.sampled$TWI <- scale(data.sampled$TWI)
 head(data.sampled)
-hist(data.sampled$coast)
+save(data.sampled, file = 'I:/DATA/output/MF/standardized10000samples_xy.RData')
 
 ##glmer function(DON'T RUN, very slow)
 #fittedModel <- glmer(MF_av ~ coast +  (1|type) , 
@@ -61,9 +67,9 @@ hist(data.sampled$coast)
 ##Test the poisson model###
 ###########################
 plot(coast ~ MF_av, 
-     xlab = "MF_av", ylab = "Standardized latitude", data = data.sampled)
-pois <-glm(MF_av ~ latitude + coast + cover +elevation + eastness +
-                        northness +relative_elevation + slope, 
+     xlab = "MF_av", ylab = "Standardized coast", data = data.sampled)
+pois <-glm(MF_singleT_0.8 ~ latitude + coast + cover +elevation + eastness +
+                        northness +relative_elevation + slope + TWI + type, 
                          family = "poisson", data = data.sampled)
 
 summary(pois)
@@ -77,6 +83,20 @@ qqline(poisres)
 simulationOutput <- simulateResiduals(fittedModel = pois)
 plot(simulationOutput) #Looks like underdispersion. check zero-inflation
 
+#Dispersion
+testDispersion(simulationOutput)
+
+#test spatial autocorrelation
+res <- simulateResiduals(pois, plot = T)
+testSpatialAutocorrelation(simulationOutput, x = xy[,1], y = xy[,2])
+
+##grouping according to random factor
+grouping = as.factor(sample.int(50, 500, replace = T))
+res2 <- recalculateResiduals(res, group = grouping)
+plot(res2)
+#Exact p-value for the quantile lines
+testQuantiles(simulationOutput)
+
 #test for zero-inflation.
 testZeroInflation(simulationOutput) #There is no zero-inflation
 
@@ -84,23 +104,29 @@ testZeroInflation(simulationOutput) #There is no zero-inflation
 countOnes <- function(x) sum(x == 1)  # testing for number of 1
 testGeneric(simulationOutput, summary = countOnes, alternative = "greater") #not significant in 1-inflation.
 
-#Dispersion
-testDispersion(simulationOutput)
-
-#Exact p-value for the quantile lines
-testQuantiles(simulationOutput)
-
-#test for categorical predictors
+#test for categorical predictors (forest type)
 testCategorical(simulationOutput, catPred = data.sampled$type)
 ##one-sample Kolmogorov-Smirnov test determine whether the data is ditributed 
 #significantly from a uniformity distribution per box. 
 #here the 'type' does not follow uniformity.
 #And a Levene's test for homogeneity of variances between boxes. A positive result will be in red.
+ggplot() +
+  geom_qq(aes(sample = rstandard(pois))) +
+  geom_abline(color = "red") +
+  coord_fixed()
+
+ggplot(data = data.sampled, aes(x = rstandard(pois))) +
+  geom_histogram(aes(y= ..density..), binwidth = 0.5, color = "black", fill = "#00AFBB") +
+  geom_density(alpha =0.2, fill = '#9aad2c') +
+  theme(panel.background = element_rect(fill = 'white'),
+  axis.line.x = element_line(),
+  axis.line.y = element_line()) + 
+  ggtitle('Hist for standardized res')
 
 ####quasipoisson####
 # requires glmmTMB to include 'ziformula' for testing zero-inflation
-quasipois <- glm(MF_av ~ latitude + coast + cover +elevation + eastness +
-                        northness +relative_elevation + slope, 
+quasipois <- glm(MF_singleT_0.8 ~ latitude + coast + cover +elevation + eastness +
+                        northness +relative_elevation + slope + TWI + type, 
                         family = "quasipoisson", data = data.sampled)
 summary(quasipois) 
 #DHARMa can't work with quasipoisson.So use qq-plot.
@@ -109,6 +135,18 @@ hist(quasipois$residuals)
 qqnorm(quasipoisres)# Plot the residuals
 # Plot the Q-Q line
 qqline(quasipoisres)
+gplot() +
+  geom_qq(aes(sample = rstandard(pois))) +
+  geom_abline(color = "red") +
+  coord_fixed()
+
+ggplot(data = data.sampled, aes(x = rstandard(pois))) +
+  geom_histogram(aes(y= ..density..), binwidth = 0.5, color = "black", fill = "#00AFBB") +
+  geom_density(alpha =0.2, fill = '#9aad2c') +
+  theme(panel.background = element_rect(fill = 'white'),
+  axis.line.x = element_line(),
+  axis.line.y = element_line()) + 
+  ggtitle('Hist for standardized res')
 
 ####Compare different MF among conifer and broadleaf.####
 #########################################################
@@ -152,7 +190,7 @@ plotResiduals(simulationOutput, data.sampled$latitude)
 ####Try the quansibinomial model.##
 ###################################
 quasibino <-glm(MF_av ~ latitude + coast + cover +elevation + eastness +
-                        northness +relative_elevation + slope, 
+                        northness +relative_elevation + slope + TWI, 
                          family = "quasibinomial", data = data.sampled)
 summary(quasibino)
 #simulationOutput <- simulateResiduals(fittedModel = binomial01) #!DHARMa can't run quansi model.

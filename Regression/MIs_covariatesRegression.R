@@ -1,6 +1,7 @@
 library(terra)
 mi_fvocc <- rast('E:/Output/MicrorefugiaIndex/MI_fvocc_75km_25m_add0.tif')
 mi_bvocc <- rast('E:/Output/MicrorefugiaIndex/MI_bvocc_75km_25m_add0.tif')
+twi <- rast('E:/Input/Predictors/TWI.tif')
 xy <- cbind(data.sampled$x, data.sampled$y)
 mi_sample <- extract(mi_fvocc, xy)
 mi_sample <- extract(mi_bvocc, xy)
