@@ -1,73 +1,36 @@
 ##Load the R data and inspect the data.
-load('I:/DATA/output/MF/10000samples.RData')
+load('I:/DATA/output/MF/clean_data_samplexy.RData')
 unique(clean_s$type)
-mf_av <- unique(clean_s$mean)
 mf_singT <- unique(clean_s$MF_singleT_0.8)
 class(mf_av)
 class(mf_singT)
 hist(clean_s$latitude)
 dim(clean_s)
-colnames(clean_s)[10] <- 'MF_av'
+colnames(clean_s)[12] <- 'MF_av'
 head(clean_s)
 #Save R data
 save(clean_s, file = 'I:/DATA/output/MF/clean_data_sample.RData')
 
 #Extract 10,000 rows for linear regression.
 data.sampled<-clean_s[sample(1:nrow(clean_s),10000, replace=FALSE),]
-save(data.sampled, file = 'I:/DATA/output/MF/10000samples.RData')
-##Fit a linear regression model
-MFav_predictors <- lm(MF_av ~type + latitude + coast + cover + elevation +
-                    eastness + northness + relative_elevation + slope, 
-                    data = clean_s)
+save(data.sampled, file = 'I:/DATA/output/MF/10000samples_xy.RData')
 
-MFav_lm_residuals <- MFav_predictors$residuals
-hist(MFav_lm_residuals)
-qqnorm(MFav_lm_residuals)# Plot the residuals
-# Plot the Q-Q line
-qqline(MFav_lm_residuals)
-
-##Fit linear regression on smaller dataset.
-df_sampled_lm <- lm(MF_av ~type + latitude + coast + cover + elevation +
-                      eastness + northness + relative_elevation + slope, 
-                    data = data.sampled)
+#sample_residual <- df_sampled_lm$residuals
 
 
-sample_residual <- df_sampled_lm$residuals
-hist(sample_residual)
-qqnorm(sample_residual)# Plot the residuals
-# Plot the Q-Q line
-qqline(sample_residual)
-
-##Poisson model##
+##Check the data
 load('I:/DATA/output/MF/10000samples.RData')
-library(ggplot2)
 str(data.sampled)
 hist(data.sampled$MF_singleT_0.8)
 hist(data.sampled$MF_av)
-data.sampled$MF_av <- round(data.sampled$MF_av, digits = 2)
-
 mf_av <- unique(data.sampled$MF_av)
-#Predict the MF_T values by the difference of forest type.
-with(data.sampled, tapply(MF_av, type, function(x) {
-  sprintf("M (SD) = %1.2f (%1.2f)", mean(x), sd(x))
-}))
-
-#ggplot to compare among the two different forest types
-ggplot(data.sampled, aes(MF_av, fill = type)) +
-  geom_histogram(binwidth=.2, position="dodge")
-
-hist(data.sampled$slope)
-
+data.sampled$MF_av <- round(data.sampled$MF_av, digits = 2)
+mf_av <- unique(data.sampled$MF_av)
+#boxplot 
 boxplot(cover~MF_av, data = data.sampled,
         varwidth = TRUE)
 
-poisson01 <-glm(formula = MF_av ~ cover + coast + latitude +
-                 elevation + relative_elevation + slope, family = "poisson",
-                  data = data.sampled)
-summary(poisson01)
-poisson01_resi <- poisson01$residuals
-
-####Use DHARMa package for residual diagnostics.
+####Use DHARMa package for residual diagnostics.####
 library(DHARMa)
 library(lme4)
 library(glmmTMB)
@@ -82,12 +45,12 @@ data.sampled$eastness <- scale(data.sampled$eastness)
 data.sampled$northness <- scale(data.sampled$northness)
 data.sampled$relative_elevation <- scale(data.sampled$relative_elevation)
 data.sampled$slope <- scale(data.sampled$slope)
-
+data.sampled$type <- as.factor(data.sampled$type)
+save(data.sampled, file = 'I:/DATA/output/MF/standardized10000samples_xy.RData')
 head(data.sampled)
 hist(data.sampled$coast)
 
-
-##glmer function
+##glmer function(DON'T RUN, very slow)
 #fittedModel <- glmer(MF_av ~ coast +  (1|type) , 
 #                    family = "poisson", data = data.sampled)
 #simulationOutput <- simulateResiduals(fittedModel = fittedModel)
@@ -99,24 +62,25 @@ hist(data.sampled$coast)
 ###########################
 plot(coast ~ MF_av, 
      xlab = "MF_av", ylab = "Standardized latitude", data = data.sampled)
-poisson01 <-glm(MF_av ~ latitude + coast + cover +elevation + eastness +
+pois <-glm(MF_av ~ latitude + coast + cover +elevation + eastness +
                         northness +relative_elevation + slope, 
                          family = "poisson", data = data.sampled)
 
-summary(poisson01)
-simulationOutput <- simulateResiduals(fittedModel = poisson01)
+summary(pois)
+poisres <- pois$residuals
+hist(poisres)
+qqnorm(poisres)# Plot the residuals
+# Plot the Q-Q line
+qqline(poisres)
+
+##Use DHARMa to test assumptions####
+simulationOutput <- simulateResiduals(fittedModel = pois)
 plot(simulationOutput) #Looks like underdispersion. check zero-inflation
 
 #test for zero-inflation.
 testZeroInflation(simulationOutput) #There is no zero-inflation
-# requires glmmTMB to include 'ziformula' for testing zero-inflation
-quasipois <- glm(MF_av ~ latitude + coast + cover +elevation + eastness +
-                        northness +relative_elevation + slope, 
-                        family = "quasipoisson", data = data.sampled)
-summary(quasipois) #zero-inlfation not significant.
 
-simulationOutput <- simulateResiduals(fittedModel = poisson01) #DHARMa can't work with quasipoisson.
-plot(simulationOutput)
+#test 1-inflation?
 countOnes <- function(x) sum(x == 1)  # testing for number of 1
 testGeneric(simulationOutput, summary = countOnes, alternative = "greater") #not significant in 1-inflation.
 
@@ -132,6 +96,19 @@ testCategorical(simulationOutput, catPred = data.sampled$type)
 #significantly from a uniformity distribution per box. 
 #here the 'type' does not follow uniformity.
 #And a Levene's test for homogeneity of variances between boxes. A positive result will be in red.
+
+####quasipoisson####
+# requires glmmTMB to include 'ziformula' for testing zero-inflation
+quasipois <- glm(MF_av ~ latitude + coast + cover +elevation + eastness +
+                        northness +relative_elevation + slope, 
+                        family = "quasipoisson", data = data.sampled)
+summary(quasipois) 
+#DHARMa can't work with quasipoisson.So use qq-plot.
+quasipoisres <- quasipois$residuals
+hist(quasipois$residuals)
+qqnorm(quasipoisres)# Plot the residuals
+# Plot the Q-Q line
+qqline(quasipoisres)
 
 ####Compare different MF among conifer and broadleaf.####
 #########################################################
