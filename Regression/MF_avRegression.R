@@ -1,51 +1,53 @@
-##Load the R data and inspect the data.
-load('I:/DATA/output/MF/clean_data_samplexy.RData')
+## Load the R data and inspect the data.
+load("I:/DATA/output/MF/clean_data_samplexy.RData")
 unique(clean_s$type)
 mf_singT <- unique(clean_s$MF_singleT_0.8)
 class(mf_av)
 class(mf_singT)
 hist(clean_s$latitude)
 dim(clean_s)
-colnames(clean_s)[12] <- 'MF_av'
+colnames(clean_s)[12] <- "MF_av"
 head(clean_s)
-#Save R data
-save(clean_s, file = 'I:/DATA/output/MF/clean_data_sample.RData')
+# Save R data
+save(clean_s, file = "I:/DATA/output/MF/clean_data_sample.RData")
 
-#Extract 10,000 rows for linear regression.
-data.sampled<-clean_s[sample(1:nrow(clean_s),10000, replace=FALSE),]
-save(data.sampled, file = 'I:/DATA/output/MF/10000samples_xy.RData')
+# Extract 10,000 rows for linear regression.
+data.sampled <- clean_s[sample(1:nrow(clean_s), 10000, replace = FALSE), ]
+save(data.sampled, file = "I:/DATA/output/MF/10000samples_xy.RData")
 
-#sample_residual <- df_sampled_lm$residuals
+# sample_residual <- df_sampled_lm$residuals
 
 
-##Check the data
-load('I:/DATA/output/MF/10000samples.RData')
+## Check the data
+load("I:/DATA/output/MF/10000samples.RData")
 str(data.sampled)
 hist(data.sampled$MF_singleT_0.8)
 hist(data.sampled$MF_av)
 mf_av <- unique(data.sampled$MF_av)
 data.sampled$MF_av <- round(data.sampled$MF_av, digits = 2)
 mf_av <- unique(data.sampled$MF_av)
-#boxplot 
-boxplot(cover~MF_av, data = data.sampled,
-        varwidth = TRUE)
+# boxplot
+boxplot(cover ~ MF_av,
+  data = data.sampled,
+  varwidth = TRUE
+)
 
-####Use DHARMa package for residual diagnostics.####
+#### Use DHARMa package for residual diagnostics.####
 library(DHARMa)
 library(lme4)
 library(glmmTMB)
-load('I:/DATA/output/MF/10000samples_xy.RData')
-twi_sample <- extract(twi,xy)
+load("I:/DATA/output/MF/10000samples_xy.RData")
+twi_sample <- extract(twi, xy)
 head(twi_sample)
 data.sampled$TWI <- twi_sample$TWI
 data.sampled$MF_av <- round(data.sampled$MF_av, digits = 2)
-#save data with adding twi
-save(data.sampled, file = 'I:/DATA/output/MF/RAW10000samples_xy.RData')
+# save data with adding twi
+save(data.sampled, file = "I:/DATA/output/MF/RAW10000samples_xy.RData")
 
-#Standardized X variables.
+# Standardized X variables.
 data.sampled$coast <- scale(data.sampled$coast)
 data.sampled$cover <- scale(data.sampled$cover)
-data.sampled$latitude <-scale(data.sampled$latitude)
+data.sampled$latitude <- scale(data.sampled$latitude)
 data.sampled$elevation <- scale(data.sampled$elevation)
 data.sampled$eastness <- scale(data.sampled$eastness)
 data.sampled$northness <- scale(data.sampled$northness)
@@ -54,85 +56,87 @@ data.sampled$slope <- scale(data.sampled$slope)
 data.sampled$type <- as.factor(data.sampled$type)
 data.sampled$TWI <- scale(data.sampled$TWI)
 head(data.sampled)
-save(data.sampled, file = 'I:/DATA/output/MF/standardized10000samples_xy.RData')
-
-##glmer function(DON'T RUN, very slow)
-#fittedModel <- glmer(MF_av ~ coast +  (1|type) , 
-#                    family = "poisson", data = data.sampled)
-#simulationOutput <- simulateResiduals(fittedModel = fittedModel)
-#plot(simulationOutput)
-
-####Fit the model####
+save(data.sampled, file = "I:/DATA/output/MF/standardized10000samples_xy.RData")
+#### Fit the model####
 ###########################
-##Test the poisson model###
+## Test the poisson model###
 ###########################
-plot(coast ~ MF_av, 
-     xlab = "MF_av", ylab = "Standardized coast", data = data.sampled)
-pois <-glm(MF_singleT_0.8 ~ latitude + coast + cover +elevation + eastness +
-                        northness +relative_elevation + slope + TWI + type, 
-                         family = "poisson", data = data.sampled)
+plot(coast ~ MF_av,
+  xlab = "MF_av", ylab = "Standardized coast", data = data.sampled
+)
+pois <- glm(
+  MF_singleT_0.8 ~ latitude + coast + cover + elevation + eastness +
+    northness + relative_elevation + slope + TWI + type,
+  family = "poisson", data = data.sampled
+)
 
 summary(pois)
 poisres <- pois$residuals
 hist(poisres)
-qqnorm(poisres)# Plot the residuals
+qqnorm(poisres) # Plot the residuals
 # Plot the Q-Q line
 qqline(poisres)
 
-##Use DHARMa to test assumptions####
+## Use DHARMa to test assumptions####
 simulationOutput <- simulateResiduals(fittedModel = pois)
-plot(simulationOutput) #Looks like underdispersion. check zero-inflation
+plot(simulationOutput) # Looks like underdispersion. check zero-inflation
 
-#Dispersion
+# Dispersion
 testDispersion(simulationOutput)
 
-#test spatial autocorrelation
+# test spatial autocorrelation
 res <- simulateResiduals(pois, plot = T)
-testSpatialAutocorrelation(simulationOutput, x = xy[,1], y = xy[,2])
+testSpatialAutocorrelation(simulationOutput, x = xy[, 1], y = xy[, 2])
 
-##grouping according to random factor
-grouping = as.factor(sample.int(50, 500, replace = T))
+## grouping according to random factor
+grouping <- as.factor(sample.int(50, 500, replace = T))
 res2 <- recalculateResiduals(res, group = grouping)
 plot(res2)
-#Exact p-value for the quantile lines
+# Exact p-value for the quantile lines
 testQuantiles(simulationOutput)
 
-#test for zero-inflation.
-testZeroInflation(simulationOutput) #There is no zero-inflation
+# test for zero-inflation.
+testZeroInflation(simulationOutput) # There is no zero-inflation
 
-#test 1-inflation?
-countOnes <- function(x) sum(x == 1)  # testing for number of 1
-testGeneric(simulationOutput, summary = countOnes, alternative = "greater") #not significant in 1-inflation.
+# test 1-inflation?
+countOnes <- function(x) sum(x == 1) # testing for number of 1
+testGeneric(simulationOutput, summary = countOnes, alternative = "greater")
+# not significant in 1-inflation.
 
-#test for categorical predictors (forest type)
+# test for categorical predictors (forest type)
 testCategorical(simulationOutput, catPred = data.sampled$type)
-##one-sample Kolmogorov-Smirnov test determine whether the data is ditributed 
-#significantly from a uniformity distribution per box. 
-#here the 'type' does not follow uniformity.
-#And a Levene's test for homogeneity of variances between boxes. A positive result will be in red.
+## one-sample Kolmogorov-Smirnov test determine whether the data is ditributed
+# significantly from a uniformity distribution per box.
+# here the 'type' does not follow uniformity.
+# And a Levene's test for homogeneity of variances between boxes.
+# A positive result will be in red.
 ggplot() +
   geom_qq(aes(sample = rstandard(pois))) +
   geom_abline(color = "red") +
   coord_fixed()
 
 ggplot(data = data.sampled, aes(x = rstandard(pois))) +
-  geom_histogram(aes(y= ..density..), binwidth = 0.5, color = "black", fill = "#00AFBB") +
-  geom_density(alpha =0.2, fill = '#9aad2c') +
-  theme(panel.background = element_rect(fill = 'white'),
-  axis.line.x = element_line(),
-  axis.line.y = element_line()) + 
-  ggtitle('Hist for standardized res')
+  geom_histogram(aes(y = ..density..), binwidth = 0.5, color = "black", fill = "#00AFBB") +
+  geom_density(alpha = 0.2, fill = "#9aad2c") +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    axis.line.x = element_line(),
+    axis.line.y = element_line()
+  ) +
+  ggtitle("Hist for standardized res")
 
-####quasipoisson####
+#### quasipoisson####
 # requires glmmTMB to include 'ziformula' for testing zero-inflation
-quasipois <- glm(MF_singleT_0.8 ~ latitude + coast + cover +elevation + eastness +
-                        northness +relative_elevation + slope + TWI + type, 
-                        family = "quasipoisson", data = data.sampled)
-summary(quasipois) 
-#DHARMa can't work with quasipoisson.So use qq-plot.
+quasipois <- glm(
+  MF_singleT_0.8 ~ latitude + coast + cover + elevation + eastness +
+    northness + relative_elevation + slope + TWI + type,
+  family = "quasipoisson", data = data.sampled
+)
+summary(quasipois)
+# DHARMa can't work with quasipoisson.So use qq-plot.
 quasipoisres <- quasipois$residuals
 hist(quasipois$residuals)
-qqnorm(quasipoisres)# Plot the residuals
+qqnorm(quasipoisres) # Plot the residuals
 # Plot the Q-Q line
 qqline(quasipoisres)
 gplot() +
@@ -141,19 +145,21 @@ gplot() +
   coord_fixed()
 
 ggplot(data = data.sampled, aes(x = rstandard(pois))) +
-  geom_histogram(aes(y= ..density..), binwidth = 0.5, color = "black", fill = "#00AFBB") +
-  geom_density(alpha =0.2, fill = '#9aad2c') +
-  theme(panel.background = element_rect(fill = 'white'),
-  axis.line.x = element_line(),
-  axis.line.y = element_line()) + 
-  ggtitle('Hist for standardized res')
+  geom_histogram(aes(y = ..density..), binwidth = 0.5, color = "black", fill = "#00AFBB") +
+  geom_density(alpha = 0.2, fill = "#9aad2c") +
+  theme(
+    panel.background = element_rect(fill = "white"),
+    axis.line.x = element_line(),
+    axis.line.y = element_line()
+  ) +
+  ggtitle("Hist for standardized res")
 
-####Compare different MF among conifer and broadleaf.####
+#### Compare different MF among conifer and broadleaf.####
 #########################################################
-##Base on the KS test and the Levene's test, the Mann-Whitney U test is applied.
-conif <- data.sampled[data.sampled$type == '1',]
-broadl <- data.sampled[data.sampled$type == '2',]
-shapiro.test(conif$MF_av) #test the nomality by using Shapiro-Wilk test.Sample size must below 5000.
+## Base on the KS test and the Levene's test, the Mann-Whitney U test is applied.
+conif <- data.sampled[data.sampled$type == "1", ]
+broadl <- data.sampled[data.sampled$type == "2", ]
+shapiro.test(conif$MF_av) # test the nomality by using Shapiro-Wilk test.Sample size must below 5000.
 
 library(dplyr)
 library(ggpubr)
@@ -161,85 +167,101 @@ group_by(data.sampled, type) %>%
   summarise(
     count = n(),
     median = median(MF_av, na.rm = TRUE),
-    IQR = IQR(MF_av, na.rm = TRUE))
+    IQR = IQR(MF_av, na.rm = TRUE)
+  )
 
-res <- wilcox.test(MF_av~ type, 
-                   data = data.sampled,
-                   exact = FALSE)#p < 0.05, there is a significant different between two types.
+res <- wilcox.test(MF_av ~ type,
+  data = data.sampled,
+  exact = FALSE
+) # p < 0.05, there is a significant different between two types.
 
-ggboxplot(data.sampled, x = "type", y = "MF_av", 
-          color = "type", palette = c("#00AFBB", "#E7B800"),
-          ylab = "MF_av", xlab = "Forest type")
-#Density chart
+ggboxplot(data.sampled,
+  x = "type", y = "MF_av",
+  color = "type", palette = c("#00AFBB", "#E7B800"),
+  ylab = "MF_av", xlab = "Forest type"
+)
+# Density chart
 library(hrbrthemes)
 library(tidyr)
 library(ggplot2)
 cols <- c("#00AFBB", "#E7B800")
-p2 <- ggplot(data=data.sampled, aes(x=MF_av, fill = type)) +
-    geom_density(alpha=.4, color = NA) +
-    scale_fill_manual(values = cols)
+p2 <- ggplot(data = data.sampled, aes(x = MF_av, fill = type)) +
+  geom_density(alpha = .4, color = NA) +
+  scale_fill_manual(values = cols)
 
-#####By default, plotResiduals plots against predicted values. 
-####However, you can also use it to plot residuals against a specific other predictors (highly recommend).
-#If the predictor is a factor, or if there is just a small number of observations on the x axis,
-#plotResiduals will plot a box plot with additional tests instead of a scatter plot.
-plotResiduals(simulationOutput, data.sampled$type) 
+##### By default, plotResiduals plots against predicted values.
+#### However, you can also use it to plot residuals against a specific other predictors (highly recommend).
+# If the predictor is a factor, or if there is just a small number of observations on the x axis,
+# plotResiduals will plot a box plot with additional tests instead of a scatter plot.
+plotResiduals(simulationOutput, data.sampled$type)
 plotResiduals(simulationOutput, data.sampled$latitude)
 
 ###################################
-####Try the quansibinomial model.##
+#### Try the quansibinomial model.##
 ###################################
-quasibino <-glm(MF_av ~ latitude + coast + cover +elevation + eastness +
-                        northness +relative_elevation + slope + TWI, 
-                         family = "quasibinomial", data = data.sampled)
+quasibino <- glm(
+  MF_av ~ latitude + coast + cover + elevation + eastness +
+    northness + relative_elevation + slope + TWI,
+  family = "quasibinomial", data = data.sampled
+)
 summary(quasibino)
-#simulationOutput <- simulateResiduals(fittedModel = binomial01) #!DHARMa can't run quansi model.
+# simulationOutput <- simulateResiduals(fittedModel = binomial01) #!DHARMa can't run quansi model.
 
 
 #########################
-####Negative binomial####
+#### Negative binomial####
 #########################
 library(MASS)
 head(data.sampled)
-negbino <- glm.nb(MF_av ~ latitude + coast + cover +elevation + eastness +
-                        northness +relative_elevation + slope, 
-                          data = data.sampled)
+negbino <- glm.nb(
+  MF_av ~ latitude + coast + cover + elevation + eastness +
+    northness + relative_elevation + slope,
+  data = data.sampled
+)
 summary(negbino)
 simulationOutput <- simulateResiduals(fittedModel = negbino)
 plot(simulationOutput)
-#test zero-inflation.
+# test zero-inflation.
 library(pscl)
-zinb <- zeroinfl(MF_singleT_0.8 ~ latitude + coast + cover +elevation + eastness +
-                        northness +relative_elevation + slope,
-               dist = "negbin", data = data.sampled) #zero inflated nb, in the pscl package
-#Still look overfitting and underdispersion.
+zinb <- zeroinfl(
+  MF_singleT_0.8 ~ latitude + coast + cover + elevation + eastness +
+    northness + relative_elevation + slope,
+  dist = "negbin", data = data.sampled
+) # zero inflated nb, in the pscl package
+# Still look overfitting and underdispersion.
 
-####Binomial####
-binomial02 <-glm(MF_av ~ latitude + coast + cover +elevation + eastness +
-                        northness +relative_elevation + slope, 
-                         family = "binomial", data = data.sampled)
+#### Binomial####
+binomial02 <- glm(
+  MF_av ~ latitude + coast + cover + elevation + eastness +
+    northness + relative_elevation + slope,
+  family = "binomial", data = data.sampled
+)
 summary(binomial02)
 simulationOutput <- simulateResiduals(fittedModel = binomial02)
 plot(simulationOutput)
-#A bit better.but still look underdispersion and overfitting.
+# A bit better.but still look underdispersion and overfitting.
 testDispersion(simulationOutput)
-testZeroInflation(simulationOutput) #there is no zero-inflation
+testZeroInflation(simulationOutput) # there is no zero-inflation
 
-#Test the non-independence of the data (e.g. temporal autocorrelation, 
-#check via DHARMa:: testTemporalAutocorrelation) that your predictors can use to overfit, 
-#or that your data-generating process is simply not a Poisson process.
+# Test the non-independence of the data (e.g. temporal autocorrelation,
+# check via DHARMa:: testTemporalAutocorrelation) that your predictors can use to overfit,
+# or that your data-generating process is simply not a Poisson process.
 testSpatialAutocorrelation(simulationOutput)
-##zero inflated nb
+## zero inflated nb
 library(pscl)
 install.packages("pscl")
-zinb <- zeroinfl(MF_singleT_0.8 ~ latitude + coast + cover +elevation + eastness +
-                        northness +relative_elevation + slope, ,
-                        dist = "negbin", data = data.sampled) #zero inflated nb, in the pscl package. MF is not ineger.
+zinb <- zeroinfl(
+  MF_singleT_0.8 ~ latitude + coast + cover + elevation + eastness +
+    northness + relative_elevation + slope, ,
+  dist = "negbin", data = data.sampled
+) # zero inflated nb, in the pscl package. MF is not ineger.
 
-####Compare different models.####
+#### Compare different models.####
 tmp <- summary(zinb)
 tmp$coefficients$count[-7, 1] |> exp()
 tmp$coefficients$zero[-7, 1] |> exp()
-tmp <- data.frame(bino = AIC(binomial02), pois = AIC(poisson01), quasip = AIC(quasipois),
-                  quasibin = AIC(quasibino),negb = AIC(negbino))
+tmp <- data.frame(
+  bino = AIC(binomial02), pois = AIC(poisson01), quasip = AIC(quasipois),
+  quasibin = AIC(quasibino), negb = AIC(negbino)
+)
 knitr::kable(tmp, align = "l")
