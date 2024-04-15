@@ -22,7 +22,7 @@ mfav <- unique(data_sampled$MF_av)
 #data_sampled$pos <- numFactor(data_sampled$x, data_sampled$y)
 #data_sampled$group <- factor(rep(1, nrow(data_sampled)))
 head(data_sampled)
-
+class(data_sampled$type) #'factor'
 ####Poisson model####
 #Poisson without intercept.
 mod_pois <- gam(
@@ -87,6 +87,7 @@ mod_beta_intercep <- gam(
 summary(mod_beta_intercep)
 simulationOutput <- simulateResiduals(fittedModel = mod_beta_intercep)
 plot(simulationOutput)
+save(mod_beta_intercep, file = 'I:/DATA/output/MF/models/MF_avBeta_interc.rda')
 
 ####Test the predictor saperately####
 # for cover
