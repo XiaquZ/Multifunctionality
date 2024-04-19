@@ -6,52 +6,6 @@ library(ggtext)
 library(showtext)
 library(gghighlight)
 library(tidyverse)
-# load the model
-# load("I:/DATA/output/MF/models/MF_avBeta_interc.rda")
-
-
-load("I:/DATA/output/MF/standardized10000samples_xy.RData")
-data_sampled <- data.sampled
-# change min and max values for beta regression model.
-min(data_sampled$MF_av)
-max(data_sampled$MF_av)
-data_sampled$MF_av[which(data_sampled$MF_av == 0)] <- 0.0001
-data_sampled$MF_av[which(data_sampled$MF_av == 1)] <- 0.9999
-levels(data_sampled$type)[1] <- "Broadleaved forest"
-levels(data_sampled$type)[2] <- "Coniferous forest"
-mfav <- unique(data_sampled$MF_av)
-# To fixed error that predictors become matrix instead of 'numeric' after scaled
-data_sampled$coast <- c(scale(data_sampled$coast))
-data_sampled$cover <- c(scale(data_sampled$cover))
-data_sampled$elevation <- c(scale(data_sampled$elevation))
-data_sampled$eastness <- c(scale(data_sampled$eastness))
-data_sampled$northness <- c(scale(data_sampled$northness))
-data_sampled$relative_elevation <- c(scale(data_sampled$relative_elevation))
-data_sampled$slope <- c(scale(data_sampled$slope))
-data_sampled$TWI <- c(scale(data_sampled$TWI))
-head(data_sampled)
-save(data_sampled, file = "I:/DATA/output/MF/10000samples_forBetaR.rda")
-# beta with intercept
-mod_beta_intercep <- gam(
-  MF_av ~ type + coast + cover + elevation + eastness +
-    northness + relative_elevation + slope + TWI +
-    s(x, y, bs = "gp", m = 2),
-  family = betar(link = "logit"),
-  data = data_sampled
-)
-summary(mod_beta_intercep)
-save(mod_beta_intercep,
-  file = "I:/DATA/output/MF/models/MF_avBeta_interc_v2.rda"
-)
-## Use forest type = 2 as reference in the model for marginal effects.
-# mod_beta_ref2 <- gam(
-#    MF_av ~ relevel(type, ref = 2) + coast + cover + elevation + eastness +
-#        northness + relative_elevation + slope + TWI +
-#        s(x, y, bs = "gp", m = 2),
-#    family = betar(link = "logit"),
-#    data = data_sampled
-# )
-# summary(mod_beta_ref2)
 
 ####################################################################
 #### Create panel plots for marginal effects for each predictor.####
