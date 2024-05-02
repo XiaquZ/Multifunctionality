@@ -31,6 +31,7 @@ data_sampled$slope <- c(scale(data_sampled$slope))
 data_sampled$TWI <- c(scale(data_sampled$TWI))
 head(data_sampled)
 save(data_sampled, file = "I:/DATA/output/MF/10000samples_forBetaR.rda")
+
 # beta with intercept
 mod_beta_intercep <- gam(
   MF_av ~ type + coast + cover + elevation + eastness +
@@ -43,16 +44,6 @@ summary(mod_beta_intercep)
 save(mod_beta_intercep,
   file = "I:/DATA/output/MF/models/MF_avBeta_interc_v2.rda"
 )
-## Use forest type = 2 as reference in the model for marginal effects.
-# mod_beta_ref2 <- gam(
-#    MF_av ~ relevel(type, ref = 2) + coast + cover + elevation + eastness +
-#        northness + relative_elevation + slope + TWI +
-#        s(x, y, bs = "gp", m = 2),
-#    family = betar(link = "logit"),
-#    data = data_sampled
-# )
-# summary(mod_beta_ref2)
-
 ####################################################################
 #### Create panel plots for marginal effects for each predictor.####
 ####################################################################
@@ -176,7 +167,8 @@ annotations <- data.frame(
   ),
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
-) #<- adjust
+) 
+
 # plot
 svg("I:/SVG/Regression/coverMargin.svg")
 plot(dat_cover) +
@@ -476,7 +468,7 @@ annotations <- data.frame(
    paste(("p = "), round(p_v, digits = 3)),
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
-) #<- adjust
+))
 svg("I:/SVG/Regression/TWI.svg")
 plot(dat_twi) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),

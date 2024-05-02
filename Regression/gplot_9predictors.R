@@ -15,10 +15,12 @@ font_add('fa-reg', 'I:/SVG/otfs/Font Awesome 6 Free-Regular-400.otf')
 font_add('fa-brands', 'I:/SVG/otfs/Font Awesome 6 Brands-Regular-400.otf')
 font_add('fa-solid', 'I:/SVG/otfs/Font Awesome 6 Free-Solid-900.otf')
 showtext_auto()
-# forest type
+
+#Load the beta regression models
 load("I:/DATA/output/MF/models/MF_avBeta_interc_v2.rda")
 sum <- summary(mod_beta_intercep)
 
+#Forest types
 dat_type <- predict_response(mod_beta_intercep, "type", mragin = "mean_mode")
 load("I:/DATA/output/MF/models/forestType_margin.rda")
 dat_type
@@ -32,7 +34,8 @@ annotations <- data.frame(
   ),
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
-) #<- adjust
+) # adjust
+
 svg("I:/SVG/Regression/forestTypeMargin.svg")
 plot(dat_type) +
   geom_point(aes(color = dat_type$x),
@@ -55,7 +58,7 @@ plot(dat_type) +
     size = 8, col = "black",
   ) +
   theme_light() +
-  theme( # plot.title = element_text(lineheight=0.5,family = "TNR"),
+  theme(
     axis.line = element_line(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
@@ -82,6 +85,7 @@ annotations <- data.frame(
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
 ) #<- adjust
+
 svg("I:/SVG/Regression/coastMargin.svg")
 plot(dat_coast) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
@@ -430,7 +434,8 @@ annotations <- data.frame(
    paste(("p = "), round(p_v, digits = 3)),
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
-) #<- adjust
+))
+
 svg("I:/SVG/Regression/TWI.svg")
 plot(dat_twi) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),

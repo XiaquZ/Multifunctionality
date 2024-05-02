@@ -9,6 +9,7 @@ load("I:/DATA/output/MF/standardized10000samples_xy.RData")
 ## Test the poisson model###
 ###########################
 data_sampled <- data.sampled
+#extract 1000 samples.
 data_sampled <- sample_n(data_sampled, 1000)
 
 hist(data_sampled$MF_singleT_0.8)
