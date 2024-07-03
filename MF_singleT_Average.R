@@ -5,6 +5,7 @@ library(parallel)
 ####crop the extent to be match####
 filenames <- list.files("I:/DATA/output/", pattern="tif$", full.names=TRUE)
 s <- lapply(filenames, rast)
+
 # create output filenames and folder
 outf <- gsub("I:/DATA/output", "I:/DATA/output/MF", filenames)
 ##Crop to smaller extent.
@@ -12,6 +13,7 @@ e <- rast("I:/DATA/output/MI_BVoMC_75km_25m.tif")
 e2 <- rast("I:/DATA/output/MI_MaxTOffset.tif")
 evocc <- ext(e)
 eoffset <- ext(e2)
+
 for (i in 1:length(filenames)) {
   b <- c(rast(filenames[i]))
   crop(b, evocc, filename=outf[i]) 
