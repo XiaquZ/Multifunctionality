@@ -1,27 +1,30 @@
 ####Load packages####
 library(terra)
 library(parallel)
+terraOptions(verbose=T)
 
-####crop the extent to be match####
-filenames <- list.files("I:/DATA/output/", pattern="tif$", full.names=TRUE)
+####Load files####
+filenames <- list.files("I:/DATA/input/MIs/", pattern="tif$", full.names=TRUE)
 s <- lapply(filenames, rast)
 
 # create output filenames and folder
-outf <- gsub("I:/DATA/output", "I:/DATA/output/MF", filenames)
-##Crop to smaller extent.
-e <- rast("I:/DATA/output/MI_BVoMC_75km_25m.tif")
-e2 <- rast("I:/DATA/output/MI_MaxTOffset.tif")
-evocc <- ext(e)
-eoffset <- ext(e2)
+outf <- gsub("I:/DATA/input/MIs", "I:/DATA/output/MF", filenames)
 
-for (i in 1:length(filenames)) {
-  b <- c(rast(filenames[i]))
-  crop(b, evocc, filename=outf[i]) 
-}
+# ##Crop to smaller extent.
+# e <- rast("I:/DATA/output/MI_BVoMC_75km_25m.tif")
+# e2 <- rast("I:/DATA/output/MI_MaxTOffset.tif")
+# evocc <- ext(e)
+# eoffset <- ext(e2)
+# 
+# for (i in 1:length(filenames)) {
+#   b <- c(rast(filenames[i]))
+#   crop(b, evocc, filename=outf[i]) 
+# }
 
 ##Load all the rasters after cropping to the same extent.
-filenames <- list.files("I:/DATA/output/MF", pattern="tif$", full.names=TRUE)
+filenames <- list.files("I:/DATA/input/MIs", pattern="tif$", full.names=TRUE)
 crop_files <- lapply(filenames, rast)
+c_stack <- rast(c(crop_files))
 c_stack <- rast(c(crop_files))
 ####MF_average Methods
 MF_av <- mean(c_stack, na.rm = TRUE)
