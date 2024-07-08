@@ -30,11 +30,10 @@ c_stack <- rast(c(crop_files))
 MF_av <- mean(c_stack, na.rm = TRUE)
 MF_av02<- app(c_stack,mean, na.rm = TRUE, core =10)
 MF_av<- round(MF_av, digits = 1)
-class(mean_test) <- "SpatRaster"
-names(mean_test) <- 'MF_average_4MIs'
-mean_test <- setMinMax(mean_test)
+MF_av
+names(MF_av) <- 'MF_average_5MIs'
 
-writeRaster(MF_av, filename = "E:/Output/Multifunctionality/MF_Average_5MIs_EU_25m_EPSG3035.tif", overwrite = TRUE)
+writeRaster(MF_av, filename = "E:/Output/Multifunctionality/MF_Average_5MIs_EU_25m_EPSG3035_V2.tif", overwrite = TRUE)
 
 ##round raster digits
 MF_av <- rast('D:/PhD/Data/Output/MF_Average_4MIs_EU_25m_EPSG3035_V2.tif') 
