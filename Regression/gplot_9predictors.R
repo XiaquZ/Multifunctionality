@@ -2,9 +2,13 @@ library(ggeffects)
 library(magrittr)
 library(mgcv)
 library(ggplot2)
+#install.packages("ggtext")
 library(ggtext)
+#install.packages("showtext")
 library(showtext)
+#install.packages("gghighlight")
 library(gghighlight)
+#install.packages("tidyverse")
 library(tidyverse)
 
 ####################################################################
@@ -17,11 +21,10 @@ font_add('fa-solid', 'I:/SVG/otfs/Font Awesome 6 Free-Solid-900.otf')
 showtext_auto()
 
 #Load the beta regression models
-load("I:/DATA/output/MF/models/MF_avBeta_interc_v2.rda")
-sum <- summary(mod_beta_intercep)
-
+load("I:/GitHub/MF/Data/models/MF_avBeta_V3.RData")
+sum <- summary(mod_beta_intercep_v3)
 #Forest types
-dat_type <- predict_response(mod_beta_intercep, "type", mragin = "mean_mode")
+dat_type <- predict_response(mod_beta_intercep_v3, "type", mragin = "mean_mode")
 load("I:/DATA/output/MF/models/forestType_margin.rda")
 dat_type
 p_v <- sum$p.pv[2]
@@ -30,7 +33,7 @@ annotations <- data.frame(
   ypos = c(Inf, Inf),
   annotateText = c(
     " A <span style='font-family:fa-solid;'>&#xf1bb;</span>",
-    paste("p < 0.001")
+    paste("p = 0.251")
   ),
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
@@ -67,10 +70,10 @@ plot(dat_type) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_type, file = "I:/DATA/output/MF/models/forestType_margin.rda")
+save(dat_type, file = "I:/GitHub/MF/Data/models/forestType_margin.rda")
 
 # coast
-dat_coast <- predict_response(mod_beta_intercep, "coast", mragin = "mean_mode")
+dat_coast <- predict_response(mod_beta_intercep_v3, "coast", mragin = "mean_mode")
 load("I:/DATA/output/MF/models/coast_margin.rda")
 dat_coast
 p_v <- sum$p.pv[3]
@@ -117,10 +120,10 @@ plot(dat_coast) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_coast, file = "I:/DATA/output/MF/models/coast_margin.rda")
+save(dat_coast, file = "I:/GitHub/MF/Data/models/coast_margin.rda")
 
 # forest cover
-dat_cover <- predict_response(mod_beta_intercep, "cover", margin = "mean_mode")
+dat_cover <- predict_response(mod_beta_intercep_v3, "cover", margin = "mean_mode")
 load("I:/DATA/output/MF/models/cover_margin.rda")
 dat_cover
 p_v <- sum$p.pv[4]
@@ -167,10 +170,10 @@ plot(dat_cover) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_cover, file = "I:/DATA/output/MF/models/cover_margin.rda")
+save(dat_cover, file = "I:/GitHub/MF/Data/models/cover_margin.rda")
 
 # elevation
-dat_elevation <- predict_response(mod_beta_intercep, "elevation",
+dat_elevation <- predict_response(mod_beta_intercep_v3, "elevation",
   margin = "mean_mode"
 )
 load("I:/DATA/output/MF/models/elevation_margin.rda")
@@ -190,9 +193,9 @@ annotations <- data.frame(
 svg("I:/SVG/Regression/elevationMargin.svg")
 plot(dat_elevation) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
-    fill = "#8ba8e7", alpha = 0.4
+    fill = "#6972f0", alpha = 0.4
   ) +
-  geom_line(color = "#586C7A", size = 1.4) +
+  geom_line(color = "#4D4E7C", size = 1.4) +
   labs(
     x = "Elevation (scaled)",
     y = "Multifunctionality index (average)",
@@ -218,10 +221,10 @@ plot(dat_elevation) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_elevation, file = "I:/DATA/output/MF/models/elevation_margin.rda")
+save(dat_elevation, file = "I:/GitHub/MF/Data/models/elevation_margin.rda")
 
 # eastness
-dat_eastness <- predict_response(mod_beta_intercep, "eastness", margin = "mean_mode")
+dat_eastness <- predict_response(mod_beta_intercep_v3, "eastness", margin = "mean_mode")
 load("I:/DATA/output/MF/models/eastness_margin.rda")
 dat_eastness
 p_v <- sum$p.pv[6]
@@ -236,7 +239,7 @@ annotations <- data.frame(
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
 ) #<- adjust
-svg("I:/SVG/Regression/eastneddMargin.svg")
+svg("I:/SVG/Regression/EastnessMargin.svg")
 plot(dat_eastness) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     color = NA,
@@ -270,10 +273,10 @@ plot(dat_eastness) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_eastness, file = "I:/DATA/output/MF/models/eastness_margin.rda")
+save(dat_eastness, file = "I:/GitHub/MF/Data/models/eastness_margin.rda")
 
 # northness
-dat_northness <- predict_response(mod_beta_intercep, "northness", margin = "mean_mode")
+dat_northness <- predict_response(mod_beta_intercep_v3, "northness", margin = "mean_mode")
 load("I:/DATA/output/MF/models/north_margin.rda")
 dat_northness
 p_v <- sum$p.pv[7]
@@ -322,10 +325,10 @@ plot(dat_northness) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_northness, file = "I:/DATA/output/MF/models/north_margin.rda")
+save(dat_northness, file = "I:/GitHub/MF/Data/models/north_margin.rda")
 
 # relative_elevation
-dat_relalevation <- predict_response(mod_beta_intercep, "relative_elevation", margin = "mean_mode")
+dat_relalevation <- predict_response(mod_beta_intercep_v3, "relative_elevation", margin = "mean_mode")
 load("I:/DATA/output/MF/models/relaElevation_margin.rda")
 dat_relalevation
 p_v <- sum$p.pv[8]
@@ -370,11 +373,11 @@ plot(dat_relalevation) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_relalevation, file = "I:/DATA/output/MF/models/relaElevation_margin.rda")
+save(dat_relalevation, file = "I:/GitHub/MF/Data/models/relaElevation_margin.rda")
 
 
 # slope
-dat_slope <- predict_response(mod_beta_intercep, "slope", margin = "mean_mode")
+dat_slope <- predict_response(mod_beta_intercep_v3, "slope", margin = "mean_mode")
 load("I:/DATA/output/MF/models/slope_margin.rda")
 dat_slope
 p_v <- sum$p.pv[9]
@@ -419,22 +422,25 @@ plot(dat_slope) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_slope, file = "I:/DATA/output/MF/models/slope_margin.rda")
+save(dat_slope, file = "I:/GitHub/MF/Data/models/slope_margin.rda")
 
 # TWI
-dat_twi <- predict_response(mod_beta_intercep, "TWI", margin = "mean_mode")
+dat_twi <- predict_response(mod_beta_intercep_v3, "TWI", margin = "mean_mode")
 load("I:/DATA/output/MF/models/twi_margin.rda")
 dat_twi
 p_v <- sum$p.pv[10]
+
 annotations <- data.frame(
   xpos = c(-Inf, Inf),
   ypos = c(Inf, Inf),
   annotateText = c(
     " G <span style='font-family:fa-solid;'>&#xf043;</span>",
-   paste(("p = "), round(p_v, digits = 3)),
+    paste(("p = "),
+          round(p_v, digits = 3))
+  ),
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
-))
+)
 
 svg("I:/SVG/Regression/TWI.svg")
 plot(dat_twi) +
@@ -447,7 +453,7 @@ plot(dat_twi) +
     y = "Multifunctionality index (average)",
     title = NULL
   ) +
- geom_richtext(
+  geom_richtext(
     data = annotations, label.colour = NA, fill = NA, aes(
       x = xpos, y = ypos,
       hjust = hjustvar, vjust = vjustvar,
@@ -467,7 +473,7 @@ plot(dat_twi) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_twi, file = "I:/DATA/output/MF/models/twi_margin.rda")
+save(dat_twi, file = "I:/GitHub/MF/Data/models/twi_margin.rda")
 library(ggpubr)
 svg("I:/SVG/Regression/Predictors.svg")
 ggarrange(gplot_type, gplot_coast, gplot_cover, gplot_ele,
