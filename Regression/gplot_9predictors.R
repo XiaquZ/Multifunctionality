@@ -25,7 +25,7 @@ load("I:/GitHub/MF/Data/models/MF_avBeta_V3.RData")
 sum <- summary(mod_beta_intercep_v3)
 #Forest types
 dat_type <- predict_response(mod_beta_intercep_v3, "type", mragin = "mean_mode")
-load("I:/DATA/output/MF/models/forestType_margin.rda")
+load("I:/GitHub/MF/Data/models/forestType_margin.rda")
 dat_type
 p_v <- sum$p.pv[2]
 annotations <- data.frame(
@@ -42,10 +42,11 @@ annotations <- data.frame(
 svg("I:/SVG/Regression/forestTypeMargin.svg")
 plot(dat_type) +
   geom_point(aes(color = dat_type$x),
-    color = c("#5159CA", "#C8CA46"), size = 5
+    color = c("#5159CA", "#C8CA46"), size = 14
   ) +
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = dat_type$x),
-    color = c("#5159CA", "#C8CA46"), width = 0, size = 1.5
+    linetype = "dashed",
+    color = c("#5159CA", "#C8CA46"), width = 0, size = 4.0
   ) +
   labs(
     x = "Forest types",
@@ -426,7 +427,7 @@ save(dat_slope, file = "I:/GitHub/MF/Data/models/slope_margin.rda")
 
 # TWI
 dat_twi <- predict_response(mod_beta_intercep_v3, "TWI", margin = "mean_mode")
-load("I:/DATA/output/MF/models/twi_margin.rda")
+load("I:/GitHub/MF/Data/models/twi_margin.rda")
 dat_twi
 p_v <- sum$p.pv[10]
 
@@ -447,7 +448,9 @@ plot(dat_twi) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     fill = "#E7AD8B", alpha = 0.4
   ) +
-  geom_line(color = "#AA6646", size = 1.4) +
+  geom_line(aes(grop = 1),
+  linetype = "dashed", color = "#AA6646", size = 1.4
+  ) +
   labs(
     x = "TWI (scaled)",
     y = "Multifunctionality index (average)",
@@ -474,6 +477,7 @@ plot(dat_twi) +
   )
 dev.off()
 save(dat_twi, file = "I:/GitHub/MF/Data/models/twi_margin.rda")
+
 library(ggpubr)
 svg("I:/SVG/Regression/Predictors.svg")
 ggarrange(gplot_type, gplot_coast, gplot_cover, gplot_ele,
