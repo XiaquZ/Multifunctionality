@@ -65,6 +65,7 @@ mod_pois_intercep <- gam(
 summary(mod_pois_intercep)
 simulationOutput <- simulateResiduals(fittedModel = mod_pois_intercep)
 plot(simulationOutput)
+save(mod_pois_intercep, file = "I:/DATA/output/MF/PoissonWithIntercep_MF_V2.RData")
 
 #### Use 'gam()' for faster beta regression accounting spatial autocorrelation.####
 #beta without intercept.

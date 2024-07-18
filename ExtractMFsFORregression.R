@@ -11,5 +11,5 @@ colnames(data_sampled)[12] <- 'MF_av'
 head(data_sampled)
 colnames(data_sampled)[13] <- 'MF_singleT'
 head(data_sampled)
-data_sample.mf02 <- data_sampled[c(1:11,14,12,13)]
+data_sample.mf02 <- data_sampled[c(1:11,14,12,13)] #Reorder the column.
 save(data_sample.mf02, file = 'I:/GitHub/MF/Data/10000sample_covariates_MF_V2.RData')

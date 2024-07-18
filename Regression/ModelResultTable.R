@@ -29,6 +29,6 @@ summary(mod_pois_intercep)
 tab_model(mod_pois_intercep,
     title = "Table S3: Poisson regression results
     between single-threshold multifunctionality and variables ",
-    #transform = NULL,
+    # transform = NULL,
     file = "I:/DATA/output/PoissonReg_MFversion2_singleT.html"
 )
