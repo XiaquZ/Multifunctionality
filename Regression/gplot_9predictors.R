@@ -21,10 +21,15 @@ font_add('fa-solid', 'I:/SVG/otfs/Font Awesome 6 Free-Solid-900.otf')
 showtext_auto()
 
 #Load the beta regression models
-load("I:/GitHub/MF/Data/models/MF_avBeta_V3.RData")
-sum <- summary(mod_beta_intercep_v3)
+load("I:/DATA/output/MF_origi/MF_avBeta_orig.RData")
+sum <- summary(mod_beta_intercep)
+
+############################################
+#### Make margin plots for 9 variables. ####
+############################################
+
 #Forest types
-dat_type <- predict_response(mod_beta_intercep_v3, "type", mragin = "mean_mode")
+dat_type <- predict_response(mod_beta_intercep, "type", mragin = "mean_mode")
 load("I:/GitHub/MF/Data/models/forestType_margin.rda")
 dat_type
 p_v <- sum$p.pv[2]
@@ -39,7 +44,7 @@ annotations <- data.frame(
   vjustvar = c(1, 1)
 ) # adjust
 
-svg("I:/SVG/Regression/forestTypeMargin.svg")
+svg("I:/SVG/MFs/forestTypeMargin.svg")
 plot(dat_type) +
   geom_point(aes(color = dat_type$x),
     color = c("#5159CA", "#C8CA46"), size = 14
@@ -71,10 +76,10 @@ plot(dat_type) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_type, file = "I:/GitHub/MF/Data/models/forestType_margin.rda")
+save(dat_type, file = "I:/DATA/output/MF_origi/9predictors/forestType_margin.rda")
 
 # coast
-dat_coast <- predict_response(mod_beta_intercep_v3, "coast", mragin = "mean_mode")
+dat_coast <- predict_response(mod_beta_intercep, "coast", mragin = "mean_mode")
 load("I:/DATA/output/MF/models/coast_margin.rda")
 dat_coast
 p_v <- sum$p.pv[3]
@@ -97,7 +102,7 @@ plot(dat_coast) +
   ) +
   geom_line(color = "#99914B", size = 1.4) +
   labs(
-    x = "Distance to coast (scaled)",
+    x = "Distance to coast",
     y = NULL,
     title = NULL
   ) +
