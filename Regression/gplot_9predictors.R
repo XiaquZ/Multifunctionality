@@ -23,7 +23,7 @@ showtext_auto()
 #Load the beta regression models
 load("I:/DATA/output/MF_origi/MF_avBeta_orig.RData")
 sum <- summary(mod_beta_intercep)
-
+sum
 ############################################
 #### Make margin plots for 9 variables. ####
 ############################################
@@ -80,9 +80,9 @@ save(dat_type, file = "I:/DATA/output/MF_origi/9predictors/forestType_margin.rda
 
 # coast
 dat_coast <- predict_response(mod_beta_intercep, "coast", mragin = "mean_mode")
-load("I:/DATA/output/MF/models/coast_margin.rda")
+load("I:/DATA/output/MF_origi/9predictors/coast_margin.rda")
 dat_coast
-p_v <- sum$p.pv[3]
+p_v <- sum$p.pv[4]
 # create annotations df.
 annotations <- data.frame(
   xpos = c(-Inf, Inf),
@@ -95,14 +95,14 @@ annotations <- data.frame(
   vjustvar = c(1, 1)
 ) #<- adjust
 
-svg("I:/SVG/Regression/coastMargin.svg")
+svg("I:/SVG/MFs/coastMargin.svg")
 plot(dat_coast) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     fill = "#F1EF4A", alpha = 0.4
   ) +
   geom_line(color = "#99914B", size = 1.4) +
   labs(
-    x = "Distance to coast",
+    x = "Distance to coast (km)",
     y = NULL,
     title = NULL
   ) +
@@ -126,13 +126,13 @@ plot(dat_coast) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_coast, file = "I:/GitHub/MF/Data/models/coast_margin.rda")
+save(dat_coast, file = "I:/DATA/output/MF_origi/9predictors/coast_margin.rda")
 
 # forest cover
-dat_cover <- predict_response(mod_beta_intercep_v3, "cover", margin = "mean_mode")
+dat_cover <- predict_response(mod_beta_intercep, "cover", margin = "mean_mode")
 load("I:/DATA/output/MF/models/cover_margin.rda")
 dat_cover
-p_v <- sum$p.pv[4]
+p_v <- sum$p.pv[3]
 # create annotations df.
 annotations <- data.frame(
   xpos = c(-Inf, Inf),
@@ -145,14 +145,14 @@ annotations <- data.frame(
   vjustvar = c(1, 1)
 ) #<- adjust
 # plot
-svg("I:/SVG/Regression/coverMargin.svg")
+svg("I:/SVG/MFs/coverMargin.svg")
 plot(dat_cover) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     fill = "#9082E2", alpha = 0.4
   ) +
   geom_line(color = "#68587A", size = 1.4) +
   labs(
-    x = "Tree cover density (scaled)",
+    x = "Tree cover density (%)",
     y = NULL,
     title = NULL
   ) +
@@ -176,10 +176,10 @@ plot(dat_cover) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_cover, file = "I:/GitHub/MF/Data/models/cover_margin.rda")
+save(dat_cover, file = "I:/DATA/output/MF_origi/9predictors/cover_margin.rda")
 
 # elevation
-dat_elevation <- predict_response(mod_beta_intercep_v3, "elevation",
+dat_elevation <- predict_response(mod_beta_intercep, "elevation",
   margin = "mean_mode"
 )
 load("I:/DATA/output/MF/models/elevation_margin.rda")
@@ -196,14 +196,14 @@ annotations <- data.frame(
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
 ) #<- adjust
-svg("I:/SVG/Regression/elevationMargin.svg")
+svg("I:/SVG/MFs/elevationMargin.svg")
 plot(dat_elevation) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     fill = "#6972f0", alpha = 0.4
   ) +
   geom_line(color = "#4D4E7C", size = 1.4) +
   labs(
-    x = "Elevation (scaled)",
+    x = "Elevation (m)",
     y = "Multifunctionality index (average)",
     title = NULL
   ) +
@@ -227,13 +227,13 @@ plot(dat_elevation) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_elevation, file = "I:/GitHub/MF/Data/models/elevation_margin.rda")
+save(dat_elevation, file = "I:/DATA/output/MF_origi/9predictors/elevation_margin.rda")
 
 # eastness
-dat_eastness <- predict_response(mod_beta_intercep_v3, "eastness", margin = "mean_mode")
+dat_eastness <- predict_response(mod_beta_intercep, "eastness", margin = "mean_mode")
 load("I:/DATA/output/MF/models/eastness_margin.rda")
 dat_eastness
-p_v <- sum$p.pv[6]
+p_v <- sum$p.pv[8]
 # create annotations df.
 annotations <- data.frame(
   xpos = c(-Inf, Inf),
@@ -245,7 +245,7 @@ annotations <- data.frame(
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
 ) #<- adjust
-svg("I:/SVG/Regression/EastnessMargin.svg")
+svg("I:/SVG/MFs/EastnessMargin.svg")
 plot(dat_eastness) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     color = NA,
@@ -255,7 +255,7 @@ plot(dat_eastness) +
     linetype = "dashed", color = "#586C7A", size = 1.4
   ) +
   labs(
-    x = "Eastness (scaled)",
+    x = "Eastness",
     y = NULL,
     title = NULL
   ) +
@@ -279,13 +279,13 @@ plot(dat_eastness) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_eastness, file = "I:/GitHub/MF/Data/models/eastness_margin.rda")
+save(dat_eastness, file = "I:/DATA/output/MF_origi/9predictors/eastness_margin.rda")
 
 # northness
-dat_northness <- predict_response(mod_beta_intercep_v3, "northness", margin = "mean_mode")
+dat_northness <- predict_response(mod_beta_intercep, "northness", margin = "mean_mode")
 load("I:/DATA/output/MF/models/north_margin.rda")
 dat_northness
-p_v <- sum$p.pv[7]
+p_v <- sum$p.pv[9]
 # create annotations df.
 annotations <- data.frame(
   xpos = c(-Inf, Inf),
@@ -297,7 +297,7 @@ annotations <- data.frame(
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
 ) #<- adjust
-svg("I:/SVG/Regression/NorthMargin.svg")
+svg("I:/SVG/MFs/NorthMargin.svg")
 plot(dat_northness) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     linetype = 0,
@@ -307,7 +307,7 @@ plot(dat_northness) +
     linetype = "dashed", color = "#587A6C", size = 1.4
   ) +
   labs(
-    x = "Northness (scaled)",
+    x = "Northness",
     y = NULL,
     title = NULL
   ) +
@@ -331,13 +331,13 @@ plot(dat_northness) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_northness, file = "I:/GitHub/MF/Data/models/north_margin.rda")
+save(dat_northness, file = "I:/DATA/output/MF_origi/9predictors/north_margin.rda")
 
 # relative_elevation
-dat_relalevation <- predict_response(mod_beta_intercep_v3, "relative_elevation", margin = "mean_mode")
+dat_relalevation <- predict_response(mod_beta_intercep, "relative_elevation", margin = "mean_mode")
 load("I:/DATA/output/MF/models/relaElevation_margin.rda")
 dat_relalevation
-p_v <- sum$p.pv[8]
+p_v <- sum$p.pv[6]
 # create annotations df.
 annotations <- data.frame(
   xpos = c(-Inf, Inf),
@@ -348,14 +348,14 @@ annotations <- data.frame(
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
 ) #<- adjust
-svg("I:/SVG/Regression/RelevationMargin.svg")
+svg("I:/SVG/MFs/RelevationMargin.svg")
 plot(dat_relalevation) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     fill = "#bce78b", alpha = 0.4
   ) +
   geom_line(color = "#6B7A58", size = 1.4) +
   labs(
-    x = "Relative elevation (scaled)",
+    x = "Relative elevation (m)",
     y = NULL,
     title = NULL
   ) +
@@ -379,14 +379,14 @@ plot(dat_relalevation) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_relalevation, file = "I:/GitHub/MF/Data/models/relaElevation_margin.rda")
+save(dat_relalevation, file = "I:/DATA/output/MF_origi/9predictors/relaElevation_margin.rda")
 
 
 # slope
-dat_slope <- predict_response(mod_beta_intercep_v3, "slope", margin = "mean_mode")
+dat_slope <- predict_response(mod_beta_intercep, "slope", margin = "mean_mode")
 load("I:/DATA/output/MF/models/slope_margin.rda")
 dat_slope
-p_v <- sum$p.pv[9]
+p_v <- sum$p.pv[7]
 # create annotations df.
 annotations <- data.frame(
   xpos = c(-Inf, Inf),
@@ -397,14 +397,14 @@ annotations <- data.frame(
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
 ) #<- adjust
-svg("I:/SVG/Regression/slope.svg")
+svg("I:/SVG/MFs/slope.svg")
 plot(dat_slope) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     fill = "#e7ca8b", alpha = 0.4
   ) +
   geom_line(color = "#AA8F46", size = 1.4) +
   labs(
-    x = "Slope (scaled)",
+    x = "Slope (°)",
     y = NULL,
     title = NULL
   ) +
@@ -428,10 +428,10 @@ plot(dat_slope) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_slope, file = "I:/GitHub/MF/Data/models/slope_margin.rda")
+save(dat_slope, file = "I:/DATA/output/MF_origi/9predictors/slope_margin.rda")
 
 # TWI
-dat_twi <- predict_response(mod_beta_intercep_v3, "TWI", margin = "mean_mode")
+dat_twi <- predict_response(mod_beta_intercep, "TWI", margin = "mean_mode")
 load("I:/GitHub/MF/Data/models/twi_margin.rda")
 dat_twi
 p_v <- sum$p.pv[10]
@@ -448,7 +448,7 @@ annotations <- data.frame(
   vjustvar = c(1, 1)
 )
 
-svg("I:/SVG/Regression/TWI.svg")
+svg("I:/SVG/MFs/TWI.svg")
 plot(dat_twi) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     fill = "#E7AD8B", alpha = 0.4
@@ -457,7 +457,7 @@ plot(dat_twi) +
   linetype = "dashed", color = "#AA6646", size = 1.4
   ) +
   labs(
-    x = "TWI (scaled)",
+    x = "Topographic wetness index",
     y = "Multifunctionality index (average)",
     title = NULL
   ) +
@@ -481,7 +481,7 @@ plot(dat_twi) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_twi, file = "I:/GitHub/MF/Data/models/twi_margin.rda")
+save(dat_twi, file = "I:/DATA/output/MF_origi/9predictors/twi_margin.rda")
 
 library(ggpubr)
 svg("I:/SVG/Regression/Predictors.svg")
