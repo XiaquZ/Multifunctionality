@@ -35,8 +35,10 @@ predict_s$MF_av[which(predict_s$MF_av == 1)] <- 0.9999
 class(predict_s$type)
 predict_s$type[which(predict_s$type == 1)] <- "Broadleaved forest"
 predict_s$type[which(predict_s$type == 2)] <- "Coniferous forest"
+predict_s$type <- as.factor(predict_s$type)
+
 #### Poisson model####
-# Poisson without intercept.
+# Poisson WITHOUT intercept.
 mod_pois <- gam(
   MF_singleT ~ type + coast + cover + elevation + eastness +
     northness + relative_elevation + slope + TWI +
@@ -72,7 +74,7 @@ save(mod_pois_intercep,
 )
 
 #### Use 'gam()' for faster beta regression accounting spatial autocorrelation.####
-# beta without intercept.
+# beta WITHOUT intercept.
 mod_beta <- gam(
   MF_av ~ type + coast + cover + elevation + eastness +
     northness + relative_elevation + slope + TWI +
@@ -85,17 +87,17 @@ simulationOutput <- simulateResiduals(fittedModel = mod_beta)
 plot(simulationOutput)
 
 # beta with intercept
-mod_beta_intercep_v3 <- gam(
-  MF_av ~ type + coast + cover + elevation + eastness +
-    northness + relative_elevation + slope + TWI +
+mod_beta_intercep <- gam(
+  MF_av ~   type + cover + coast + elevation + relative_elevation +
+    slope + eastness + northness + TWI +
     s(x, y, bs = "gp", m = 2),
   family = betar(link = "logit"),
   data = predict_s
 )
-summary(mod_beta_intercep_v3)
-simulationOutput <- simulateResiduals(fittedModel = mod_beta_intercep_v3)
+summary(mod_beta_intercep)
+simulationOutput <- simulateResiduals(fittedModel = mod_beta_intercep)
 plot(simulationOutput)
-save(mod_beta_intercep_v3, file = "I:/DATA/output/MF_origi/MF_avBeta_orig.RData")
+save(mod_beta_intercep, file = "I:/DATA/output/MF_origi/MF_avBeta_orig.RData")
 
 #### Test the predictor saperately####
 # for cover
