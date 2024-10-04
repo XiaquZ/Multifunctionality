@@ -44,14 +44,14 @@ annotations <- data.frame(
   vjustvar = c(1, 1)
 ) # adjust
 
-svg("I:/SVG/MFs/forestTypeMargin.svg")
+svg("I:/SVG/MFs/forestTypeMargin02.svg", width = 8, height = 8)
 plot(dat_type) +
   geom_point(aes(color = dat_type$x),
-    color = c("#5159CA", "#C8CA46"), size = 14
+    color = c("#5159CA", "#C8CA46"), size = 4
   ) +
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = dat_type$x),
-    linetype = "dashed",
-    color = c("#5159CA", "#C8CA46"), width = 0, size = 4.0
+    linetype = 1,
+    color = c("#5159CA", "#C8CA46"), width = 0.1, size = 1.5
   ) +
   labs(
     x = "Forest types",
@@ -66,6 +66,7 @@ plot(dat_type) +
     ),
     size = 8, col = "black",
   ) +
+  ylim(0.0, 0.8) +
   theme_light() +
   theme(
     axis.line = element_line(),
@@ -76,7 +77,7 @@ plot(dat_type) +
     text = element_text(size = 25)
   )
 dev.off()
-save(dat_type, file = "I:/DATA/output/MF_origi/9predictors/forestType_margin.rda")
+#save(dat_type, file = "I:/DATA/output/MF_origi/9predictors/forestType_margin.rda")
 
 # coast
 dat_coast <- predict_response(mod_beta_intercep, "coast", mragin = "mean_mode")
@@ -95,7 +96,7 @@ annotations <- data.frame(
   vjustvar = c(1, 1)
 ) #<- adjust
 
-svg("I:/SVG/MFs/coastMargin.svg")
+svg("I:/SVG/MFs/y_lmit/coastMargin02.svg", width = 8, height = 8)
 plot(dat_coast) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     fill = "#F1EF4A", alpha = 0.4
@@ -109,15 +110,15 @@ plot(dat_coast) +
   geom_richtext(
     data = annotations, label.colour = NA, fill = NA, aes(
       x = xpos, y = ypos,
-      hjust = hjustvar, vjust = vjustvar, 
-      label = annotateText, show.legend = FALSE
+      hjust = hjustvar, vjust = vjustvar,
+      label = annotateText
     ),
     size = 8, col = "black",
   ) +
-  scale_y_continuous(labels = scales::label_number(accuracy = 0.01)) +
-  scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
+  xlim(0.0,400) +
+  ylim(0.2, 0.8) +
   theme_light() +
-  theme( # plot.title = element_text(lineheight=0.5,family = "TNR"),
+  theme( 
     axis.line = element_line(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
@@ -130,7 +131,7 @@ save(dat_coast, file = "I:/DATA/output/MF_origi/9predictors/coast_margin.rda")
 
 # forest cover
 dat_cover <- predict_response(mod_beta_intercep, "cover", margin = "mean_mode")
-load("I:/DATA/output/MF/models/cover_margin.rda")
+load("I:/DATA/output/MF_origi/9predictors/cover_margin.rda")
 dat_cover
 p_v <- sum$p.pv[3]
 # create annotations df.
@@ -145,7 +146,7 @@ annotations <- data.frame(
   vjustvar = c(1, 1)
 ) #<- adjust
 # plot
-svg("I:/SVG/MFs/coverMargin.svg")
+svg("I:/SVG/MFs/y_lmit/coverMargin02.svg", width = 8, height = 8)
 plot(dat_cover) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     fill = "#9082E2", alpha = 0.4
@@ -167,6 +168,7 @@ plot(dat_cover) +
   scale_y_continuous(labels = scales::label_number(accuracy = 0.01)) +
   scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
   theme_light() +
+  ylim(0.2, 0.8) +
   theme(
     axis.line = element_line(),
     panel.grid.major = element_blank(),
@@ -182,7 +184,7 @@ save(dat_cover, file = "I:/DATA/output/MF_origi/9predictors/cover_margin.rda")
 dat_elevation <- predict_response(mod_beta_intercep, "elevation",
   margin = "mean_mode"
 )
-load("I:/DATA/output/MF/models/elevation_margin.rda")
+load("I:/DATA/output/MF_origi/9predictors/elevation_margin.rda")
 dat_elevation
 p_v <- sum$p.pv[5]
 # create annotations df.
@@ -196,7 +198,7 @@ annotations <- data.frame(
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
 ) #<- adjust
-svg("I:/SVG/MFs/elevationMargin.svg")
+svg("I:/SVG/MFs/y_lmit/elevationMargin02.svg", width = 8, height = 8)
 plot(dat_elevation) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     fill = "#6972f0", alpha = 0.4
@@ -217,6 +219,7 @@ plot(dat_elevation) +
   ) +
   scale_y_continuous(labels = scales::label_number(accuracy = 0.01)) +
   scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
+  ylim(0.2, 0.8) +
   theme_light() +
   theme( # plot.title = element_text(lineheight=0.5,family = "TNR"),
     axis.line = element_line(),
@@ -231,7 +234,7 @@ save(dat_elevation, file = "I:/DATA/output/MF_origi/9predictors/elevation_margin
 
 # eastness
 dat_eastness <- predict_response(mod_beta_intercep, "eastness", margin = "mean_mode")
-load("I:/DATA/output/MF/models/eastness_margin.rda")
+load("I:/DATA/output/MF_origi/9predictors/eastness_margin.rda")
 dat_eastness
 p_v <- sum$p.pv[8]
 # create annotations df.
@@ -245,7 +248,7 @@ annotations <- data.frame(
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
 ) #<- adjust
-svg("I:/SVG/MFs/EastnessMargin.svg")
+svg("I:/SVG/MFs/y_lmit/EastnessMargin02.svg", width = 8, height = 8)
 plot(dat_eastness) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     color = NA,
@@ -267,9 +270,10 @@ plot(dat_eastness) +
     ),
     size = 8, col = "black",
   ) +
+  ylim(0.2, 0.8) +
   theme_light() +
-  scale_y_continuous(labels = scales::label_number(accuracy = 0.01)) +
-  scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
+  # scale_y_continuous(labels = scales::label_number(accuracy = 0.1)) +
+  # scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
   theme( # plot.title = element_text(lineheight=0.5,family = "TNR"),
     axis.line = element_line(),
     panel.grid.major = element_blank(),
@@ -283,7 +287,7 @@ save(dat_eastness, file = "I:/DATA/output/MF_origi/9predictors/eastness_margin.r
 
 # northness
 dat_northness <- predict_response(mod_beta_intercep, "northness", margin = "mean_mode")
-load("I:/DATA/output/MF/models/north_margin.rda")
+load("I:/DATA/output/MF_origi/9predictors/north_margin.rda")
 dat_northness
 p_v <- sum$p.pv[9]
 # create annotations df.
@@ -297,7 +301,8 @@ annotations <- data.frame(
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
 ) #<- adjust
-svg("I:/SVG/MFs/NorthMargin.svg")
+
+svg("I:/SVG/MFs/y_lmit/NorthMargin02.svg", width = 8, height = 8)
 plot(dat_northness) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     linetype = 0,
@@ -322,6 +327,7 @@ plot(dat_northness) +
   theme_light() +
   scale_y_continuous(labels = scales::label_number(accuracy = 0.01)) +
   scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
+  ylim(0.2, 0.8) +
   theme( # plot.title = element_text(lineheight=0.5,family = "TNR"),
     axis.line = element_line(),
     panel.grid.major = element_blank(),
@@ -335,7 +341,7 @@ save(dat_northness, file = "I:/DATA/output/MF_origi/9predictors/north_margin.rda
 
 # relative_elevation
 dat_relalevation <- predict_response(mod_beta_intercep, "relative_elevation", margin = "mean_mode")
-load("I:/DATA/output/MF/models/relaElevation_margin.rda")
+load("I:/DATA/output/MF_origi/9predictors/relaElevation_margin.rda")
 dat_relalevation
 p_v <- sum$p.pv[6]
 # create annotations df.
@@ -348,7 +354,7 @@ annotations <- data.frame(
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
 ) #<- adjust
-svg("I:/SVG/MFs/RelevationMargin.svg")
+svg("I:/SVG/MFs/y_lmit/RelevationMargin02.svg", width = 8, height = 8)
 plot(dat_relalevation) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     fill = "#bce78b", alpha = 0.4
@@ -370,7 +376,8 @@ plot(dat_relalevation) +
   theme_light() +
   scale_y_continuous(labels = scales::label_number(accuracy = 0.01)) +
   scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
-  theme( # plot.title = element_text(lineheight=0.5,family = "TNR"),
+  ylim(0.2, 0.8) +
+  theme( 
     axis.line = element_line(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
@@ -384,7 +391,7 @@ save(dat_relalevation, file = "I:/DATA/output/MF_origi/9predictors/relaElevation
 
 # slope
 dat_slope <- predict_response(mod_beta_intercep, "slope", margin = "mean_mode")
-load("I:/DATA/output/MF/models/slope_margin.rda")
+load("I:/DATA/output/MF_origi/9predictors/slope_margin.rda")
 dat_slope
 p_v <- sum$p.pv[7]
 # create annotations df.
@@ -397,7 +404,7 @@ annotations <- data.frame(
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
 ) #<- adjust
-svg("I:/SVG/MFs/slope.svg")
+svg("I:/SVG/MFs/y_lmit/slope02.svg", width = 8, height = 8)
 plot(dat_slope) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     fill = "#e7ca8b", alpha = 0.4
@@ -419,7 +426,8 @@ plot(dat_slope) +
   theme_light() +
   scale_y_continuous(labels = scales::label_number(accuracy = 0.01)) +
   scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
-  theme( # plot.title = element_text(lineheight=0.5,family = "TNR"),
+  ylim(0.2, 0.8) +
+  theme( 
     axis.line = element_line(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
@@ -432,7 +440,7 @@ save(dat_slope, file = "I:/DATA/output/MF_origi/9predictors/slope_margin.rda")
 
 # TWI
 dat_twi <- predict_response(mod_beta_intercep, "TWI", margin = "mean_mode")
-load("I:/GitHub/MF/Data/models/twi_margin.rda")
+load("I:/DATA/output/MF_origi/9predictors/twi_margin.rda")
 dat_twi
 p_v <- sum$p.pv[10]
 
@@ -448,12 +456,12 @@ annotations <- data.frame(
   vjustvar = c(1, 1)
 )
 
-svg("I:/SVG/MFs/TWI.svg")
+svg("I:/SVG/MFs/y_lmit/TWI02.svg", width = 8, height = 8)
 plot(dat_twi) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
     fill = "#E7AD8B", alpha = 0.4
   ) +
-  geom_line(aes(grop = 1),
+  geom_line(
   linetype = "dashed", color = "#AA6646", size = 1.4
   ) +
   labs(
@@ -472,7 +480,8 @@ plot(dat_twi) +
   theme_light() +
   scale_y_continuous(labels = scales::label_number(accuracy = 0.01)) +
   scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
-  theme( # plot.title = element_text(lineheight=0.5,family = "TNR"),
+  ylim(0.2, 0.8) +
+  theme( 
     axis.line = element_line(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
