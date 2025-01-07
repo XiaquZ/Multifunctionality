@@ -44,7 +44,7 @@ annotations <- data.frame(
   vjustvar = c(1, 1)
 ) # adjust
 
-svg("I:/SVG/MFs/forestTypeMargin02.svg", width = 8, height = 8)
+svg("I:/SVG/MFs/forestTypeMargin02.svg")
 plot(dat_type) +
   geom_point(aes(color = dat_type$x),
     color = c("#5159CA", "#C8CA46"), size = 4
@@ -103,7 +103,7 @@ plot(dat_coast) +
   ) +
   geom_line(color = "#99914B", size = 1.4) +
   labs(
-    x = "Distance to coast (km)",
+    #x = "Distance to coast (km)",
     y = NULL,
     title = NULL
   ) +
@@ -115,8 +115,8 @@ plot(dat_coast) +
     ),
     size = 8, col = "black",
   ) +
-  xlim(0.0,400) +
-  ylim(0.2, 0.8) +
+  scale_x_continuous("Distance to coast (km)", limits = c(0.0, 400.0)) +
+  scale_y_continuous(limits = c(0.2, 0.8)) +
   theme_light() +
   theme( 
     axis.line = element_line(),
