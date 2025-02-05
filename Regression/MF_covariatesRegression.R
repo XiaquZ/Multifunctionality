@@ -2,10 +2,12 @@ library(DHARMa)
 library(lme4)
 
 load('I:/DATA/output/MF/standardized10000samples_xy.RData')
+load("I:/GitHub/MF/Data/10000samples_orig_MF_9predicts.RData")
 ####Fit the model####
 ###########################
 ##Test the poisson model###
 ###########################
+hist(predict_s$type)
 plot(coast ~ MF_av, 
      xlab = "MF_av", ylab = "Standardized latitude", data = data.sampled)
 pois <-glm(mi_fvocc ~ latitude + coast + cover +elevation + eastness +
