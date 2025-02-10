@@ -28,10 +28,32 @@ hist(predict_s$MF_av)
 min(predict_s$MF_0.8T)
 max(predict_s$MF_0.8T)
 
-# Extract samples
-data_1000 <- sample_n(predict_s, 1000)
-head(data_1000)
+# Standardized predictors.
+predict_s$coast <- scale(predict_s$coast)
+predict_s$elevation <- scale(predict_s$elevation)
+predict_s$relative_elevation <- scale(predict_s$relative_elevation)
+predict_s$slope <- scale(predict_s$slope)
+predict_s$TWI <- scale(predict_s$TWI)
+predict_s$eastness <- scale(predict_s$eastness)
+predict_s$northness <- scale(predict_s$northness)
+predict_s$cover <- scale(predict_s$cover)
+apply(predict_s, 2, sd)
+mean(predict_s$elevation)
 
+# Extract samples
+data_3000 <- sample_n(predict_s, 3000)
+head(data_3000)
+
+# Standardized predictors samples.
+data_3000$coast <- scale(data_3000$coast)
+data_3000$elevation <- scale(data_3000$elevation)
+data_3000$relative_elevation <- scale(data_3000$relative_elevation)
+data_3000$slope <- scale(data_3000$slope)
+data_3000$TWI <- scale(data_3000$TWI)
+data_3000$eastness <- scale(data_3000$eastness)
+data_3000$northness <- scale(data_3000$northness)
+data_3000$cover <- scale(data_3000$cover)
+apply(data_3000, 2, sd)
 #### Poisson model####
 # # Poisson WITHOUT intercept.
 # mod_pois_no_intercept<- gam(
@@ -61,9 +83,10 @@ head(data_1000)
 # Fit a ZINB model with spatial autocorrelation using brms
 library(brms)
 
+# ZINB model with 3 interaction terms.
 mod_zinb <- brm(
   MF_0.8T ~ 
-    northness * slope +
+    northness * slope * cover +
     eastness +
     cover * type +
     coast +
@@ -72,7 +95,7 @@ mod_zinb <- brm(
     TWI +
     s(x, y, bs = "tp") -1,  
   family = zero_inflated_negbinomial(),  # Zero-inflated negative binomial
-  data = data_1000,
+  data = predict_s,
   cores = 2,  # Use multiple cores for faster computation
   chains = 2,
   iter = 5000,  # Number of iterations
@@ -81,13 +104,17 @@ mod_zinb <- brm(
 )
 
 # Check model summary
-summary(mod_zinb)
+summary(mod_nb)
+#Save model output
+save(mod_nb,
+     file = "I:/DATA/output/MF_origi/MFsingleT_zero_inflated_negbinomial.rda"
+)
 
 # Check residuals
-simulationOutput_zingb <- createDHARMa(
-  simulatedResponse = t(posterior_predict(mod_bayes)),
-  observedResponse = data_1000$MF_0.8T,
-  fittedPredictedResponse = apply(t(posterior_epred(mod_bayes)), 1, mean),
+simulationOutput_zinb <- createDHARMa(
+  simulatedResponse = t(posterior_predict(mod_zinb)),
+  observedResponse = predict_s$MF_0.8T,
+  fittedPredictedResponse = apply(t(posterior_epred(mod_zinb)), 1, mean),
   integerResponse = TRUE)
 
 plot(simulationOutput_zingb)
@@ -100,22 +127,13 @@ epsilon <- 1e-6
 predict_s$MF_av <- (predict_s$MF_av * (1 - 2 * epsilon)) + epsilon
 max(predict_s$MF_av)
 min(predict_s$MF_av)
-data_1000 <- sample_n(predict_s, 1000)
-max(data_1000$MF_av)
-min(data_1000$MF_av)
+data_3000 <- sample_n(predict_s, 3000)
+max(data_3000$MF_av)
+min(data_3000$MF_av)
 
-# Standardized predictors.
-data_1000$coast <- scale(data_1000$coast)
-data_1000$elevation <- scale(data_1000$elevation)
-data_1000$relative_elevation <- scale(data_1000$relative_elevation)
-data_1000$slope <- scale(data_1000$slope)
-data_1000$TWI <- scale(data_1000$TWI)
-data_1000$eastness <- scale(data_1000$eastness)
-data_1000$northness <- scale(data_1000$northness)
-data_1000$cover <- scale(data_1000$cover)
-apply(data_1000, 2, sd)
 
-#Beta regression with 3 interaction terms.
+
+#Beta regression with 2 interaction terms.
 mod_bayes_beta <- brm(
   MF_av ~ 
     northness * slope +
@@ -127,7 +145,7 @@ mod_bayes_beta <- brm(
     TWI +
     s(x, y, bs = "tp") -1,  
   family = Beta(),  
-  data = data_1000,
+  data = data_3000,
   cores = 2,  
   chains = 2,
   iter = 5000,  # Number of iterations
@@ -135,7 +153,7 @@ mod_bayes_beta <- brm(
 )
 summary(mod_bayes_beta)
 
-#Beta regression with 2 interaction terms.
+#Beta regression with 3 interaction terms.
 mod_bayes_beta02 <- brm(
   MF_av ~ 
     northness * slope * cover +
@@ -147,13 +165,18 @@ mod_bayes_beta02 <- brm(
     TWI +
     s(x, y, bs = "tp") -1,  
   family = Beta(),  
-  data = data_1000,
+  data = predict_s,
   cores = 2,  
   chains = 2,
   iter = 5000,  # Number of iterations
   warmup = 1000
 )
 summary(mod_bayes_beta02)
+
+#Save model output
+save(mod_bayes_beta02,
+     file = "I:/DATA/output/MF_origi/MFav_beta_bayes.rda"
+)
 
 
 # DHARMa residual plots
@@ -195,7 +218,7 @@ plot(dharmaRes)
 library(ggeffects)
 # Interactions of cover and forest types.
 cover_type <- predict_response(
-    mod_bayes_beta, c("cover", "type"),
+    mod_bayes_beta02, c("cover", "type"),
     margin = "mean_mode"
 )
 cover_type

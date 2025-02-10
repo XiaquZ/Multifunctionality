@@ -2,34 +2,42 @@ library(ggeffects)
 library(magrittr)
 library(mgcv)
 library(ggplot2)
-#install.packages("ggtext")
+# install.packages("ggtext")
 library(ggtext)
-#install.packages("showtext")
+# install.packages("showtext")
 library(showtext)
-#install.packages("gghighlight")
+# install.packages("gghighlight")
 library(gghighlight)
-#install.packages("tidyverse")
+# install.packages("tidyverse")
 library(tidyverse)
 
 ####################################################################
 #### Create panel plots for marginal effects for each predictor.####
 ####################################################################
 # Second argument = path to .otf-file
-font_add('fa-reg', 'I:/SVG/otfs/Font Awesome 6 Free-Regular-400.otf')
-font_add('fa-brands', 'I:/SVG/otfs/Font Awesome 6 Brands-Regular-400.otf')
-font_add('fa-solid', 'I:/SVG/otfs/Font Awesome 6 Free-Solid-900.otf')
+font_add("fa-reg", "I:/SVG/otfs/Font Awesome 6 Free-Regular-400.otf")
+font_add("fa-brands", "I:/SVG/otfs/Font Awesome 6 Brands-Regular-400.otf")
+font_add("fa-solid", "I:/SVG/otfs/Font Awesome 6 Free-Solid-900.otf")
 showtext_auto()
 
-#Load the beta regression models
-load("I:/DATA/output/MF_origi/MF_avBeta_orig.RData")
-sum <- summary(mod_beta_intercep)
+# Load the beta regression models
+load("I:/DATA/output/MF_origi/MFav_beta_bayes.rda")
+sum <- summary(mod_bayes_beta02)
 sum
 ############################################
 #### Make margin plots for 9 variables. ####
 ############################################
 
-#Forest types
-dat_type <- predict_response(mod_beta_intercep, "type", mragin = "mean_mode")
+# Forest types
+cover_type <- predict_response(
+  mod_bayes_beta02, c("cover", "type"),
+  margin = "mean_mode"
+)
+save(cover_type,
+  file =
+    "I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/cover_type_margin.rda"
+)
+
 load("I:/GitHub/MF/Data/models/forestType_margin.rda")
 dat_type
 p_v <- sum$p.pv[2]
@@ -61,7 +69,7 @@ plot(dat_type) +
   geom_richtext(
     data = annotations, label.colour = NA, fill = NA, aes(
       x = xpos, y = ypos,
-      hjust = hjustvar, vjust = vjustvar, 
+      hjust = hjustvar, vjust = vjustvar,
       label = annotateText, show.legend = FALSE
     ),
     size = 8, col = "black",
@@ -77,7 +85,7 @@ plot(dat_type) +
     text = element_text(size = 25)
   )
 dev.off()
-#save(dat_type, file = "I:/DATA/output/MF_origi/9predictors/forestType_margin.rda")
+# save(dat_type, file = "I:/DATA/output/MF_origi/9predictors/forestType_margin.rda")
 
 # coast
 dat_coast <- predict_response(mod_beta_intercep, "coast", mragin = "mean_mode")
@@ -103,7 +111,7 @@ plot(dat_coast) +
   ) +
   geom_line(color = "#99914B", size = 1.4) +
   labs(
-    #x = "Distance to coast (km)",
+    # x = "Distance to coast (km)",
     y = NULL,
     title = NULL
   ) +
@@ -118,7 +126,7 @@ plot(dat_coast) +
   scale_x_continuous("Distance to coast (km)", limits = c(0.0, 400.0)) +
   scale_y_continuous(limits = c(0.2, 0.8)) +
   theme_light() +
-  theme( 
+  theme(
     axis.line = element_line(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
@@ -160,7 +168,7 @@ plot(dat_cover) +
   geom_richtext(
     data = annotations, label.colour = NA, fill = NA, aes(
       x = xpos, y = ypos,
-      hjust = hjustvar, vjust = vjustvar, 
+      hjust = hjustvar, vjust = vjustvar,
       label = annotateText, show.legend = FALSE
     ),
     size = 8, col = "black",
@@ -209,10 +217,10 @@ plot(dat_elevation) +
     y = "Multifunctionality index (average)",
     title = NULL
   ) +
- geom_richtext(
+  geom_richtext(
     data = annotations, label.colour = NA, fill = NA, aes(
       x = xpos, y = ypos,
-      hjust = hjustvar, vjust = vjustvar, 
+      hjust = hjustvar, vjust = vjustvar,
       label = annotateText, show.legend = FALSE
     ),
     size = 8, col = "black",
@@ -265,7 +273,7 @@ plot(dat_eastness) +
   geom_richtext(
     data = annotations, label.colour = NA, fill = NA, aes(
       x = xpos, y = ypos,
-      hjust = hjustvar, vjust = vjustvar, 
+      hjust = hjustvar, vjust = vjustvar,
       label = annotateText
     ),
     size = 8, col = "black",
@@ -350,7 +358,8 @@ annotations <- data.frame(
   ypos = c(Inf, Inf),
   annotateText = c(
     " E <span style='font-family:fa-solid;'>&#xf424;&#xf277; </span>",
-    paste("p < 0.001")),
+    paste("p < 0.001")
+  ),
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
 ) #<- adjust
@@ -377,7 +386,7 @@ plot(dat_relalevation) +
   scale_y_continuous(labels = scales::label_number(accuracy = 0.01)) +
   scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
   ylim(0.2, 0.8) +
-  theme( 
+  theme(
     axis.line = element_line(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
@@ -400,7 +409,8 @@ annotations <- data.frame(
   ypos = c(Inf, Inf),
   annotateText = c(
     " F <span style='font-family:fa-solid;'>&#xe4b7;</span>",
-    paste("p < 0.001")),
+    paste("p < 0.001")
+  ),
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
 ) #<- adjust
@@ -427,7 +437,7 @@ plot(dat_slope) +
   scale_y_continuous(labels = scales::label_number(accuracy = 0.01)) +
   scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
   ylim(0.2, 0.8) +
-  theme( 
+  theme(
     axis.line = element_line(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
@@ -449,8 +459,10 @@ annotations <- data.frame(
   ypos = c(Inf, Inf),
   annotateText = c(
     " G <span style='font-family:fa-solid;'>&#xf043;</span>",
-    paste(("p = "),
-          round(p_v, digits = 3))
+    paste(
+      ("p = "),
+      round(p_v, digits = 3)
+    )
   ),
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
@@ -462,7 +474,7 @@ plot(dat_twi) +
     fill = "#E7AD8B", alpha = 0.4
   ) +
   geom_line(
-  linetype = "dashed", color = "#AA6646", size = 1.4
+    linetype = "dashed", color = "#AA6646", size = 1.4
   ) +
   labs(
     x = "Topographic wetness index",
@@ -481,7 +493,7 @@ plot(dat_twi) +
   scale_y_continuous(labels = scales::label_number(accuracy = 0.01)) +
   scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
   ylim(0.2, 0.8) +
-  theme( 
+  theme(
     axis.line = element_line(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
