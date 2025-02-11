@@ -24,6 +24,8 @@ showtext_auto()
 load("I:/DATA/output/MF_origi/MFav_beta_bayes.rda")
 sum <- summary(mod_bayes_beta02)
 sum
+ci <- sum$fixed[,3:4]
+ci <- round(ci[,1:2], digits =2)
 ############################################
 #### Make margin plots for 9 variables. ####
 ############################################
@@ -38,22 +40,22 @@ save(cover_type,
     "I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/cover_type_margin.rda"
 )
 
-load("I:/GitHub/MF/Data/models/forestType_margin.rda")
+load("I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/cover_type_margin.rda")
 dat_type
-p_v <- sum$p.pv[2]
+ci95 <- paste0("CI: ", paste0(ci[14,1], " - ", ci[14,2]))
 annotations <- data.frame(
   xpos = c(-Inf, Inf),
   ypos = c(Inf, Inf),
   annotateText = c(
-    " A <span style='font-family:fa-solid;'>&#xf1bb;</span>",
-    paste("p = 0.251")
+    " A <span style='font-family:fa-solid;'>",
+    paste(ci95)
   ),
   hjustvar = c(0, 1),
   vjustvar = c(1, 1)
 ) # adjust
 
 svg("I:/SVG/MFs/forestTypeMargin02.svg")
-plot(dat_type) +
+plot(cover_type) +
   geom_point(aes(color = dat_type$x),
     color = c("#5159CA", "#C8CA46"), size = 4
   ) +
@@ -62,7 +64,7 @@ plot(dat_type) +
     color = c("#5159CA", "#C8CA46"), width = 0.1, size = 1.5
   ) +
   labs(
-    x = "Forest types",
+    x = "Forest types * Tree cover density",
     y = "Multifunctionality index (average)",
     title = NULL
   ) +
