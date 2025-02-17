@@ -23,6 +23,7 @@ predict_s$type[which(predict_s$type == 2)] <- "Coniferous forest"
 predict_s$type <- as.factor(predict_s$type)
 head(predict_s)
 
+# Prepare mean and sd for backtransformation.
 mean_slope <- mean(predict_s$slope, na.rm = TRUE)
 sd_slope <- sd(predict_s$slope, na.rm = TRUE)
 
@@ -51,9 +52,9 @@ sd_coast <- sd(predict_s$coast, na.rm = TRUE)
 #### Create panel plots for marginal effects for each predictor.####
 ####################################################################
 # Second argument = path to .otf-file
-font_add("fa-reg", "I:/SVG/otfs/Font Awesome 6 Free-Regular-400.otf")
-font_add("fa-brands", "I:/SVG/otfs/Font Awesome 6 Brands-Regular-400.otf")
-font_add("fa-solid", "I:/SVG/otfs/Font Awesome 6 Free-Solid-900.otf")
+# font_add("fa-reg", "I:/SVG/otfs/Font Awesome 6 Free-Regular-400.otf")
+# font_add("fa-brands", "I:/SVG/otfs/Font Awesome 6 Free-Regular-400.otf")
+font_add("fa-solid", "I:/SVG/otfs/Font Awesome 6 Free-Regular-400.otf")
 showtext_auto()
 
 # Load the beta regression models
@@ -77,28 +78,29 @@ save(cover_type,
 )
 
 load("I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/cover_type_margin.rda")
-cover_type
+cover_type$cover_original <- cover_type$x * sd_cover + mean_cover
+
 ci95 <- paste0("CI: ", paste0(ci[14, 1], " - ", ci[14, 2]))
 annotations <- data.frame(
     xpos = c(-Inf, Inf),
     ypos = c(Inf, Inf),
     annotateText = c(
-        " A <span style='font-family:fa-solid;'>",
+        " (a) <span style='font-family:fa-solid;'>",
         paste(ci95)
     ),
     hjustvar = c(0, 1),
     vjustvar = c(1, 1)
 ) # adjust
 
-svg("I:/SVG/MFs_v3_bayes/coverANDType.svg", width = 8, height = 8)
+svg("I:/SVG/MFs_v3_bayes/coverANDType.svg", width = 9, height = 9)
 ggplot(
     cover_type,
-    aes(x = x, y = predicted, color = group, fill = group)
+    aes(x = cover_original, y = predicted, color = group, fill = group)
 ) + # `x` and `predicted` are standard in `ggeffects`
-    geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.4) +
-    geom_point(size = 1) +
+    geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.5) +
+    geom_line(size = 1.5) +
     labs(
-        x = "Forest types * Tree cover density",
+        x = "Tree cover density (%)",
         y = "Multifunctionality index (average)",
         title = NULL
     ) +
@@ -107,12 +109,17 @@ ggplot(
             x = xpos, y = ypos, label = annotateText,
             hjust = hjustvar, vjust = vjustvar
         ),
-        size = 8, color = "black", fill = NA, label.colour = NA, show.legend = FALSE
+        size = 12, color = "black", fill = NA, label.colour = NA, show.legend = FALSE
     ) +
     ylim(0.0, 0.8) +
     # Custom color scale
-    scale_color_manual(values = c("#5159CA", "#C8CA46")) +
-    scale_fill_manual(values = c("#5159CA", "#C8CA46")) +
+    scale_color_manual(
+        values = c("#5159CA", "#C8CA46"),
+        name = "Forest Type") +
+    scale_fill_manual(
+        values = c("#5159CA", "#C8CA46"),
+        name = "Forest Type"
+        ) +
     theme_light() +
     theme(
         axis.line = element_line(),
@@ -120,427 +127,440 @@ ggplot(
         panel.grid.minor = element_blank(),
         panel.background = element_blank(),
         panel.border = element_blank(),
-        text = element_text(size = 25)
+        text = element_text(size = 28),
+        legend.position = c(0.75, 0.2),
+        axis.text = element_text(size = 28),
+        axis.title.x = element_text(size = 32), # X-axis title size
+        axis.title.y = element_text(size = 32, face = "bold"), # Y-axis title bold
+        legend.text = element_text(size = 28), # Legend text larger
+
     )
 dev.off()
 # save(dat_type, file = "I:/DATA/output/MF_origi/9predictors/forestType_margin.rda")
 
-# coast
-dat_coast <- predict_response(mod_beta_intercep, "coast", mragin = "mean_mode")
-load("I:/DATA/output/MF_origi/9predictors/coast_margin.rda")
-dat_coast
-p_v <- sum$p.pv[4]
-# create annotations df.
+# 3-way interaction of cover, northness and slope.
+slope5_north_cov <- predict_response(
+  mod_bayes_beta02, c("cover", "northness [-1, 0, 1]", "slope[-0.382]"),
+    margin = "mean_mode" 
+)
+slope45_north_cov <- predict_response(
+  mod_bayes_beta02, c("cover", "northness [-1, 0, 1]", "slope[4.127]"),
+    margin = "mean_mode" 
+)
+
+save(slope5_north_cov,
+    file =
+        "I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/slope5_north_cover.rda"
+)
+save(slope45_north_cov,
+    file =
+        "I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/slope45_north_cover.rda"
+)
+
+load("I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/slope5_north_cover.rda")	
+load("I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/slope45_north_cover.rda")
+#Backtransfer the standardize predictors.
+slope5_north_cov$cover_original <- slope5_north_cov$x* sd_cover + mean_cover
+slope45_north_cov$cover_original <- slope45_north_cov$x* sd_cover + mean_cover
+class(slope5_north_cov$group)
+slope5_north_cov$group <- as.character(slope5_north_cov$group)  # Convert factor to character
+slope5_north_cov$group[slope5_north_cov$group == "1"] <- "North"  # Replace "1" with "North"
+slope5_north_cov$group[slope5_north_cov$group == "-1"] <- "South"  # Replace "1" with "South"
+slope5_north_cov$group[slope5_north_cov$group == "0"] <- "Flat"  # Replace "0" with "Flat"
+
+#For slope 45 degree.
+slope45_north_cov$group <- as.character(slope45_north_cov$group)  # Convert factor to character
+slope45_north_cov$group[slope45_north_cov$group == "1"] <- "North"  # Replace "1" with "North"
+slope45_north_cov$group[slope45_north_cov$group == "-1"] <- "South"  # Replace "1" with "South"
+slope45_north_cov$group[slope45_north_cov$group == "0"] <- "Flat"  # Replace "0" with "Flat"
+
+# Create annotations df.
+ci95 <- paste0("CI: ", paste0(ci[15, 1], " - ", ci[15, 2]))
 annotations <- data.frame(
     xpos = c(-Inf, Inf),
     ypos = c(Inf, Inf),
     annotateText = c(
-        " B <span style='font-family:fa-solid;'>&#xf4d7;</span>",
-        paste("p < 0.001")
+        " (b2) <span style='font-family:fa-solid;'>",
+        paste(ci95, "<br>Slope = 45°")
     ),
     hjustvar = c(0, 1),
     vjustvar = c(1, 1)
-) #<- adjust
+) # adjust
 
-svg("I:/SVG/MFs/y_lmit/coastMargin02.svg", width = 8, height = 8)
-plot(dat_coast) +
-    geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
-        fill = "#F1EF4A", alpha = 0.4
-    ) +
-    geom_line(color = "#99914B", size = 1.4) +
-    labs(
-        # x = "Distance to coast (km)",
-        y = NULL,
-        title = NULL
-    ) +
-    geom_richtext(
-        data = annotations, label.colour = NA, fill = NA, aes(
-            x = xpos, y = ypos,
-            hjust = hjustvar, vjust = vjustvar,
-            label = annotateText
-        ),
-        size = 8, col = "black",
-    ) +
-    scale_x_continuous("Distance to coast (km)", limits = c(0.0, 400.0)) +
-    scale_y_continuous(limits = c(0.2, 0.8)) +
-    theme_light() +
-    theme(
-        axis.line = element_line(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        panel.border = element_blank(),
-        text = element_text(size = 25)
-    )
-dev.off()
-save(dat_coast, file = "I:/DATA/output/MF_origi/9predictors/coast_margin.rda")
-
-# forest cover
-dat_cover <- predict_response(mod_beta_intercep, "cover", margin = "mean_mode")
-load("I:/DATA/output/MF_origi/9predictors/cover_margin.rda")
-dat_cover
-p_v <- sum$p.pv[3]
-# create annotations df.
-annotations <- data.frame(
-    xpos = c(-Inf, Inf),
-    ypos = c(Inf, Inf),
-    annotateText = c(
-        " C <span style='font-family:fa-solid;'>&#xf042;</span>",
-        paste("p < 0.001")
-    ),
-    hjustvar = c(0, 1),
-    vjustvar = c(1, 1)
-) #<- adjust
-# plot
-svg("I:/SVG/MFs/y_lmit/coverMargin02.svg", width = 8, height = 8)
-plot(dat_cover) +
-    geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
-        fill = "#9082E2", alpha = 0.4
-    ) +
-    geom_line(color = "#68587A", size = 1.4) +
+svg("I:/SVG/MFs_v3_bayes/slope45_north_cover02.svg", width = 9, height = 9)
+ggplot(
+    slope45_north_cov,
+    aes(x = cover_original, y = predicted, fill = group, color = group)
+) + # `x` and `predicted` are standard in `ggeffects`
+    geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.5) +
+    geom_line(size = 1.5) +
+    #facet_wrap(~ facet, labeller = label_both) + 
     labs(
         x = "Tree cover density (%)",
         y = NULL,
+        
         title = NULL
     ) +
     geom_richtext(
-        data = annotations, label.colour = NA, fill = NA, aes(
-            x = xpos, y = ypos,
-            hjust = hjustvar, vjust = vjustvar,
-            label = annotateText, show.legend = FALSE
+        data = annotations, aes(
+            x = xpos, y = ypos, label = annotateText,
+            hjust = hjustvar, vjust = vjustvar
         ),
-        size = 8, col = "black",
+        size = 12, color = "black", fill = NA, label.colour = NA, show.legend = FALSE
     ) +
-    scale_y_continuous(labels = scales::label_number(accuracy = 0.01)) +
-    scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
+    ylim(0.0, 0.8) +
+    # Custom color scale
+    scale_color_manual(
+        values = c("#D55E00", "#0072B2", "#009E73"),
+        name = "Aspect") +
+    scale_fill_manual(
+        values = c("#D55E00", "#0072B2", "#009E73"),
+        name = "Aspect") +
     theme_light() +
-    ylim(0.2, 0.8) +
     theme(
         axis.line = element_line(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.background = element_blank(),
         panel.border = element_blank(),
-        text = element_text(size = 25)
+        text = element_text(size = 28),
+        legend.position = c(0.75, 0.2),
+        axis.text = element_text(size = 28),
+        axis.title.x = element_text(size = 32), # X-axis title size
+        axis.title.y = element_text(size = 32, face = "bold"), # Y-axis title bold
+        legend.text = element_text(size = 28), # Legend text larger
+
     )
 dev.off()
-save(dat_cover, file = "I:/DATA/output/MF_origi/9predictors/cover_margin.rda")
 
-# elevation
-dat_elevation <- predict_response(mod_beta_intercep, "elevation",
+# coast
+dis_coast <- predict_response(
+    mod_bayes_beta02, "coast",
     margin = "mean_mode"
 )
-load("I:/DATA/output/MF_origi/9predictors/elevation_margin.rda")
-dat_elevation
-p_v <- sum$p.pv[5]
+save(dis_coast,
+    file =
+        "I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/distance_coast.rda"
+)
+load("I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/distance_coast.rda")
+dis_coast$coast_origi <- dis_coast$x * sd_coast + mean_coast
+
+ci95 <- paste0("CI: ", paste0(ci[7, 1], " - ", ci[7, 2]))
 # create annotations df.
 annotations <- data.frame(
     xpos = c(-Inf, Inf),
     ypos = c(Inf, Inf),
     annotateText = c(
-        " D <span style='font-family:fa-solid;'>&#xf277;</span>",
-        paste("p < 0.001")
+        " \\(c\\) <span style='font-family:fa-solid;'>",
+        paste(ci95)
     ),
     hjustvar = c(0, 1),
     vjustvar = c(1, 1)
 ) #<- adjust
-svg("I:/SVG/MFs/y_lmit/elevationMargin02.svg", width = 8, height = 8)
-plot(dat_elevation) +
-    geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
-        fill = "#6972f0", alpha = 0.4
-    ) +
-    geom_line(color = "#4D4E7C", size = 1.4) +
+
+svg("I:/SVG/MFs_v3_bayes/dist_coast.svg", width = 9, height = 9)
+ggplot(
+    dis_coast,
+    aes(x = coast_origi, y = predicted, color = group, fill = group)
+) + # `x` and `predicted` are standard in `ggeffects`
+    geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.5) +
+    geom_line(size = 1.5) +
     labs(
-        x = "Elevation (m)",
+        x = "Distance to coast (km)",
         y = "Multifunctionality index (average)",
         title = NULL
     ) +
     geom_richtext(
-        data = annotations, label.colour = NA, fill = NA, aes(
-            x = xpos, y = ypos,
-            hjust = hjustvar, vjust = vjustvar,
-            label = annotateText, show.legend = FALSE
+        data = annotations, aes(
+            x = xpos, y = ypos, label = annotateText,
+            hjust = hjustvar, vjust = vjustvar
         ),
-        size = 8, col = "black",
+        size = 12, color = "black", fill = NA, label.colour = NA, show.legend = FALSE
     ) +
-    scale_y_continuous(labels = scales::label_number(accuracy = 0.01)) +
-    scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
-    ylim(0.2, 0.8) +
+    ylim(0.0, 0.8) +
+    # Custom color scale
+    scale_color_manual(values = "#99914B") +
+    scale_fill_manual(values = "#99914B") +
     theme_light() +
-    theme( # plot.title = element_text(lineheight=0.5,family = "TNR"),
+    theme(
         axis.line = element_line(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.background = element_blank(),
         panel.border = element_blank(),
-        text = element_text(size = 25)
+        text = element_text(size = 28),
+        legend.position = c(0.75, 0.4),
+        axis.text = element_text(size = 28),
+        axis.title.x = element_text(size = 32), # X-axis title size
+        axis.title.y = element_text(size = 32, face = "bold"), # Y-axis title bold
+        legend.text = element_text(size = 28), # Legend text larger
+
     )
 dev.off()
-save(dat_elevation, file = "I:/DATA/output/MF_origi/9predictors/elevation_margin.rda")
 
-# eastness
-dat_eastness <- predict_response(mod_beta_intercep, "eastness", margin = "mean_mode")
-load("I:/DATA/output/MF_origi/9predictors/eastness_margin.rda")
-dat_eastness
-p_v <- sum$p.pv[8]
+# Elevation
+elevation <- predict_response(
+    mod_bayes_beta02, "elevation",
+    margin = "mean_mode"
+)
+save(elevation,
+    file =
+        "I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/elevation.rda"
+)
+load("I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/elevation.rda")
+elevation$elevation_origi <- elevation$x * sd_elevation + mean_elevation
+
+ci95 <- paste0("CI: ", paste0(ci[8, 1], " - ", ci[8, 2]))
 # create annotations df.
 annotations <- data.frame(
     xpos = c(-Inf, Inf),
     ypos = c(Inf, Inf),
     annotateText = c(
-        " H <span style='font-family:fa-solid;'>&#xf061;</span>",
-        paste(("p = "), round(p_v, digits = 3))
+        " (d) <span style='font-family:fa-solid;'>",
+        paste(ci95)
     ),
     hjustvar = c(0, 1),
     vjustvar = c(1, 1)
 ) #<- adjust
-svg("I:/SVG/MFs/y_lmit/EastnessMargin02.svg", width = 8, height = 8)
-plot(dat_eastness) +
-    geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
-        color = NA,
-        fill = "#8BCAE7", alpha = 0.4
+
+svg("I:/SVG/MFs_v3_bayes/elevation.svg", width = 9, height = 9)
+ggplot(
+    elevation,
+    aes(x = elevation_origi, y = predicted, color = group, fill = group)
+) + # `x` and `predicted` are standard in `ggeffects`
+    geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.5) +
+    geom_line(size = 1.5) +
+    labs(
+        x = "Elevation (m)",
+        y = NULL,
+        title = NULL
     ) +
-    geom_line(aes(y = dat_eastness$predicted),
-        linetype = "dashed", color = "#586C7A", size = 1.4
+    geom_richtext(
+        data = annotations, aes(
+            x = xpos, y = ypos, label = annotateText,
+            hjust = hjustvar, vjust = vjustvar
+        ),
+        size = 12, color = "black", fill = NA, label.colour = NA, show.legend = FALSE
+    ) +
+    ylim(0.0, 0.8) +
+    # Custom color scale
+    scale_color_manual(values = "#5c64cf") +
+    scale_fill_manual(values = "#5c64cf") +
+    theme_light() +
+    theme(
+        axis.line = element_line(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        panel.border = element_blank(),
+        text = element_text(size = 28),
+        legend.position = c(0.75, 0.4),
+        axis.text = element_text(size = 28),
+        axis.title.x = element_text(size = 32), # X-axis title size
+        axis.title.y = element_text(size = 32, face = "bold"), # Y-axis title bold
+        legend.text = element_text(size = 28), # Legend text larger
+    )
+dev.off()
+
+# Eastness
+eastness <- predict_response(
+    mod_bayes_beta02, "eastness",
+    margin = "mean_mode"
+)
+save(eastness,
+    file =
+        "I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/eastness.rda"
+)
+load("I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/eastness.rda")
+
+eastness$eastness_origi <- eastness$x * sd_eastness + mean_eastness
+
+ci95 <- paste0("CI: ", paste0(ci[4, 1], " - ", ci[4, 2]))
+# create annotations df.
+annotations <- data.frame(
+    xpos = c(-Inf, Inf),
+    ypos = c(Inf, Inf),
+    annotateText = c(
+        " (f) <span style='font-family:fa-solid;'>",
+        paste(ci95)
+    ),
+    hjustvar = c(0, 1),
+    vjustvar = c(1, 1)
+) #<- adjust
+
+svg("I:/SVG/MFs_v3_bayes/eastness.svg", width = 9, height = 9)
+ggplot(
+    eastness,
+    aes(x = eastness_origi, y = predicted, color = group, fill = group)
+) + # `x` and `predicted` are standard in `ggeffects`
+    geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.5) +
+     geom_line(
+        linetype = "dashed", size = 1.5
     ) +
     labs(
         x = "Eastness",
-        y = NULL,
+        y = "Multifunctionality index (average)",
         title = NULL
     ) +
     geom_richtext(
-        data = annotations, label.colour = NA, fill = NA, aes(
-            x = xpos, y = ypos,
-            hjust = hjustvar, vjust = vjustvar,
-            label = annotateText
+        data = annotations, aes(
+            x = xpos, y = ypos, label = annotateText,
+            hjust = hjustvar, vjust = vjustvar
         ),
-        size = 8, col = "black",
+        size = 12, color = "black", fill = NA, label.colour = NA, show.legend = FALSE
     ) +
-    ylim(0.2, 0.8) +
+    ylim(0.0, 0.8) +
+    # Custom color scale
+    scale_color_manual(values = "#5b978d") +
+    scale_fill_manual(values = "#5b978d") +
     theme_light() +
-    # scale_y_continuous(labels = scales::label_number(accuracy = 0.1)) +
-    # scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
-    theme( # plot.title = element_text(lineheight=0.5,family = "TNR"),
+    theme(
         axis.line = element_line(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.background = element_blank(),
         panel.border = element_blank(),
-        text = element_text(size = 25)
+        text = element_text(size = 28),
+        legend.position = c(0.75, 0.2),
+        axis.text = element_text(size = 28),
+        axis.title.x = element_text(size = 32), # X-axis title size
+        axis.title.y = element_text(size = 32, face = "bold"), # Y-axis title bold
+        legend.text = element_text(size = 28), # Legend text larger
     )
 dev.off()
-save(dat_eastness, file = "I:/DATA/output/MF_origi/9predictors/eastness_margin.rda")
 
-# northness
-dat_northness <- predict_response(mod_beta_intercep, "northness", margin = "mean_mode")
-load("I:/DATA/output/MF_origi/9predictors/north_margin.rda")
-dat_northness
-p_v <- sum$p.pv[9]
+# Relative elevation
+relative_elevation <- predict_response(
+    mod_bayes_beta02, "relative_elevation",
+    margin = "mean_mode"
+)
+save(relative_elevation,
+    file =
+        "I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/relative_elevation.rda"
+)
+load("I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/relative_elevation.rda")
+relative_elevation$relat_elevation_origi <- relative_elevation$x * sd_rela_elevation +
+ mean_rela_elevation
+
+ci95 <- paste0("CI: ", paste0(ci[9, 1], " - ", ci[9, 2]))
 # create annotations df.
 annotations <- data.frame(
     xpos = c(-Inf, Inf),
     ypos = c(Inf, Inf),
     annotateText = c(
-        " I <span style='font-family:fa-solid;'>&#xf062;</span>",
-        paste(("p = "), round(p_v, digits = 3))
+        " (e) <span style='font-family:fa-solid;'>",
+        paste(ci95)
     ),
     hjustvar = c(0, 1),
     vjustvar = c(1, 1)
 ) #<- adjust
 
-svg("I:/SVG/MFs/y_lmit/NorthMargin02.svg", width = 8, height = 8)
-plot(dat_northness) +
-    geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
-        linetype = 0,
-        fill = "#8FE4BC", alpha = 0.4
-    ) +
-    geom_line(aes(group = 1),
-        linetype = "dashed", color = "#587A6C", size = 1.4
-    ) +
-    labs(
-        x = "Northness",
-        y = NULL,
-        title = NULL
-    ) +
-    geom_richtext(
-        data = annotations, label.colour = NA, fill = NA, aes(
-            x = xpos, y = ypos,
-            hjust = hjustvar, vjust = vjustvar,
-            label = annotateText
-        ),
-        size = 8, col = "black",
-    ) +
-    theme_light() +
-    scale_y_continuous(labels = scales::label_number(accuracy = 0.01)) +
-    scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
-    ylim(0.2, 0.8) +
-    theme( # plot.title = element_text(lineheight=0.5,family = "TNR"),
-        axis.line = element_line(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        panel.border = element_blank(),
-        text = element_text(size = 25)
-    )
-dev.off()
-save(dat_northness, file = "I:/DATA/output/MF_origi/9predictors/north_margin.rda")
-
-# relative_elevation
-dat_relalevation <- predict_response(mod_beta_intercep, "relative_elevation", margin = "mean_mode")
-load("I:/DATA/output/MF_origi/9predictors/relaElevation_margin.rda")
-dat_relalevation
-p_v <- sum$p.pv[6]
-# create annotations df.
-annotations <- data.frame(
-    xpos = c(-Inf, Inf),
-    ypos = c(Inf, Inf),
-    annotateText = c(
-        " E <span style='font-family:fa-solid;'>&#xf424;&#xf277; </span>",
-        paste("p < 0.001")
-    ),
-    hjustvar = c(0, 1),
-    vjustvar = c(1, 1)
-) #<- adjust
-svg("I:/SVG/MFs/y_lmit/RelevationMargin02.svg", width = 8, height = 8)
-plot(dat_relalevation) +
-    geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
-        fill = "#bce78b", alpha = 0.4
-    ) +
-    geom_line(color = "#6B7A58", size = 1.4) +
+svg("I:/SVG/MFs_v3_bayes/rela_elevation.svg", width = 9, height = 9)
+ggplot(
+    relative_elevation,
+    aes(x = relat_elevation_origi, y = predicted, color = group, fill = group)
+) + # `x` and `predicted` are standard in `ggeffects`
+    geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.5) +
+    geom_line(size = 1.5) +
     labs(
         x = "Relative elevation (m)",
         y = NULL,
         title = NULL
     ) +
     geom_richtext(
-        data = annotations, label.colour = NA, fill = NA, aes(
-            x = xpos, y = ypos,
-            hjust = hjustvar, vjust = vjustvar,
-            label = annotateText
+        data = annotations, aes(
+            x = xpos, y = ypos, label = annotateText,
+            hjust = hjustvar, vjust = vjustvar
         ),
-        size = 8, col = "black",
+        size = 12, color = "black", fill = NA, label.colour = NA, show.legend = FALSE
     ) +
+    ylim(0.0, 0.8) +
+    xlim(0, 500) +
+    # Custom color scale
+    scale_color_manual(values = "#dabb56") +
+    scale_fill_manual(values = "#dabb56") +
     theme_light() +
-    scale_y_continuous(labels = scales::label_number(accuracy = 0.01)) +
-    scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
-    ylim(0.2, 0.8) +
     theme(
         axis.line = element_line(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.background = element_blank(),
         panel.border = element_blank(),
-        text = element_text(size = 25)
+        text = element_text(size = 28),
+        legend.position = c(0.75, 0.2),
+        axis.text = element_text(size = 28),
+        axis.title.x = element_text(size = 32), # X-axis title size
+        axis.title.y = element_text(size = 32, face = "bold"), # Y-axis title bold
+        legend.text = element_text(size = 28), # Legend text larger
     )
 dev.off()
-save(dat_relalevation, file = "I:/DATA/output/MF_origi/9predictors/relaElevation_margin.rda")
 
+# TWI
+twi <- predict_response(
+    mod_bayes_beta02, "TWI",
+    margin = "mean_mode"
+)
+save(twi,
+    file =
+        "I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/TWI.rda"
+)
+load("I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/TWI.rda")
 
-# slope
-dat_slope <- predict_response(mod_beta_intercep, "slope", margin = "mean_mode")
-load("I:/DATA/output/MF_origi/9predictors/slope_margin.rda")
-dat_slope
-p_v <- sum$p.pv[7]
+twi$twi_origi <- twi$x * sd_TWI + mean_TWI
+
+ci95 <- paste0("CI: ", paste0(ci[10, 1], " - ", ci[10, 2]))
 # create annotations df.
 annotations <- data.frame(
     xpos = c(-Inf, Inf),
     ypos = c(Inf, Inf),
     annotateText = c(
-        " F <span style='font-family:fa-solid;'>&#xe4b7;</span>",
-        paste("p < 0.001")
+        " (g) <span style='font-family:fa-solid;'>",
+        paste(ci95)
     ),
     hjustvar = c(0, 1),
     vjustvar = c(1, 1)
 ) #<- adjust
-svg("I:/SVG/MFs/y_lmit/slope02.svg", width = 8, height = 8)
-plot(dat_slope) +
-    geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
-        fill = "#e7ca8b", alpha = 0.4
+
+svg("I:/SVG/MFs_v3_bayes/TWI.svg", width = 9, height = 9)
+ggplot(
+    twi,
+    aes(x = twi_origi, y = predicted, color = group, fill = group)
+) + # `x` and `predicted` are standard in `ggeffects`
+    geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.5) +
+     geom_line(
+        linetype = "dashed", size = 1.5
     ) +
-    geom_line(color = "#AA8F46", size = 1.4) +
     labs(
-        x = "Slope (°)",
+        x = "Topographic wetness index",
         y = NULL,
         title = NULL
     ) +
     geom_richtext(
-        data = annotations, label.colour = NA, fill = NA, aes(
-            x = xpos, y = ypos,
-            hjust = hjustvar, vjust = vjustvar,
-            label = annotateText
+        data = annotations, aes(
+            x = xpos, y = ypos, label = annotateText,
+            hjust = hjustvar, vjust = vjustvar
         ),
-        size = 8, col = "black",
+        size = 12, color = "black", fill = NA, label.colour = NA, show.legend = FALSE
     ) +
+    ylim(0.0, 0.8) +
+    # Custom color scale
+    scale_color_manual(values = "#AA6646") +
+    scale_fill_manual(values = "#AA6646") +
     theme_light() +
-    scale_y_continuous(labels = scales::label_number(accuracy = 0.01)) +
-    scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
-    ylim(0.2, 0.8) +
     theme(
         axis.line = element_line(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.background = element_blank(),
         panel.border = element_blank(),
-        text = element_text(size = 25)
+        text = element_text(size = 28),
+        legend.position = c(0.75, 0.2),
+        axis.text = element_text(size = 28),
+        axis.title.x = element_text(size = 32), # X-axis title size
+        axis.title.y = element_text(size = 32, face = "bold"), # Y-axis title bold
+        legend.text = element_text(size = 28), # Legend text larger
     )
 dev.off()
-save(dat_slope, file = "I:/DATA/output/MF_origi/9predictors/slope_margin.rda")
-
-# TWI
-dat_twi <- predict_response(mod_beta_intercep, "TWI", margin = "mean_mode")
-load("I:/DATA/output/MF_origi/9predictors/twi_margin.rda")
-dat_twi
-p_v <- sum$p.pv[10]
-
-annotations <- data.frame(
-    xpos = c(-Inf, Inf),
-    ypos = c(Inf, Inf),
-    annotateText = c(
-        " G <span style='font-family:fa-solid;'>&#xf043;</span>",
-        paste(
-            ("p = "),
-            round(p_v, digits = 3)
-        )
-    ),
-    hjustvar = c(0, 1),
-    vjustvar = c(1, 1)
-)
-
-svg("I:/SVG/MFs/y_lmit/TWI02.svg", width = 8, height = 8)
-plot(dat_twi) +
-    geom_ribbon(aes(ymin = conf.low, ymax = conf.high),
-        fill = "#E7AD8B", alpha = 0.4
-    ) +
-    geom_line(
-        linetype = "dashed", color = "#AA6646", size = 1.4
-    ) +
-    labs(
-        x = "Topographic wetness index",
-        y = "Multifunctionality index (average)",
-        title = NULL
-    ) +
-    geom_richtext(
-        data = annotations, label.colour = NA, fill = NA, aes(
-            x = xpos, y = ypos,
-            hjust = hjustvar, vjust = vjustvar,
-            label = annotateText
-        ),
-        size = 8, col = "black",
-    ) +
-    theme_light() +
-    scale_y_continuous(labels = scales::label_number(accuracy = 0.01)) +
-    scale_x_continuous(labels = scales::label_number(accuracy = 0.1)) +
-    ylim(0.2, 0.8) +
-    theme(
-        axis.line = element_line(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        panel.border = element_blank(),
-        text = element_text(size = 25)
-    )
-dev.off()
-save(dat_twi, file = "I:/DATA/output/MF_origi/9predictors/twi_margin.rda")
 
 library(ggpubr)
 svg("I:/SVG/Regression/Predictors.svg")
