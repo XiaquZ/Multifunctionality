@@ -36,3 +36,4 @@ writeRaster(MF_singleT,
     overwrite = TRUE
 )
 names(MF_singleT) <- "MF_singleT0.6_5MIs"
+
