@@ -1,6 +1,7 @@
 library(ggeffects)
 library(magrittr)
-library(mgcv)
+library(brms)
+library(dplyr)
 library(ggplot2)
 # install.packages("ggtext")
 library(ggtext)
@@ -63,13 +64,42 @@ sum <- summary(mod_bayes_beta02)
 sum
 ci <- sum$fixed[, 3:4]
 ci <- round(ci[, 1:2], digits = 2)
+
 ############################################
 #### Make margin plots for 9 variables. ####
 ############################################
 
+#### Create residual data before plotting.
+#### Get model data and add residuals
+model_data <- mod_bayes_beta02$data %>%
+  mutate(
+    fitted_logit = fitted(mod_bayes_beta02, summary = TRUE)[, "Estimate"], 
+    pearson_resids = residuals(mod_bayes_beta02, type = "pearson", summary = TRUE)[, "Estimate"],
+    
+    # Convert fitted values from logit scale to response scale (0-1)
+    fitted_response = plogis(fitted_logit),
+
+    # Compute partial residuals in response scale
+    partial_resid = fitted_response + pearson_resids,
+  )
+
+# For model_data (partial residuals)
+model_data <- model_data %>%
+  mutate(
+    cover_original = (cover * sd_cover) + mean_cover, # Reverse standardization
+    coast_original = (coast * sd_coast) + mean_coast,
+    elevation_original = (elevation * sd_elevation) + mean_elevation,
+    eastness_original = (eastness * sd_eastness) + mean_eastness,
+    relative_elevation_original = (relative_elevation * sd_rela_elevation) + mean_rela_elevation,
+    TWI_original = (TWI * sd_TWI) + mean_TWI,
+    slope_original = (slope * sd_slope) + mean_slope,
+    northness_original = (northness * sd_northness) + mean_northness
+  )
+
 # Forest types
 cover_type <- predict_response(
-    mod_bayes_beta02, c("cover", "type"),
+    mod_bayes_beta02,
+     c("cover", "type"),
     margin = "mean_mode"
 )
 save(cover_type,
@@ -79,8 +109,8 @@ save(cover_type,
 
 load("I:/DATA/output/MF_origi/9predictors/Version2_MarginalPlots/cover_type_margin.rda")
 cover_type$cover_original <- cover_type$x * sd_cover + mean_cover
-
 ci95 <- paste0("CI: ", paste0(ci[14, 1], " - ", ci[14, 2]))
+
 annotations <- data.frame(
     xpos = c(-Inf, Inf),
     ypos = c(Inf, Inf),
@@ -92,51 +122,62 @@ annotations <- data.frame(
     vjustvar = c(1, 1)
 ) # adjust
 
-svg("I:/SVG/MFs_v3_bayes/coverANDType.svg", width = 9, height = 9)
-ggplot(
-    cover_type,
-    aes(x = cover_original, y = predicted, color = group, fill = group)
-) + # `x` and `predicted` are standard in `ggeffects`
-    geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.5) +
-    geom_line(size = 1.5) +
-    labs(
-        x = "Tree cover density (%)",
-        y = "Multifunctionality index (average)",
-        title = NULL
-    ) +
-    geom_richtext(
-        data = annotations, aes(
-            x = xpos, y = ypos, label = annotateText,
-            hjust = hjustvar, vjust = vjustvar
-        ),
-        size = 12, color = "black", fill = NA, label.colour = NA, show.legend = FALSE
-    ) +
-    ylim(0.0, 0.8) +
-    # Custom color scale
-    scale_color_manual(
-        values = c("#5159CA", "#C8CA46"),
-        name = "Forest Type") +
-    scale_fill_manual(
-        values = c("#5159CA", "#C8CA46"),
-        name = "Forest Type"
-        ) +
-    theme_light() +
-    theme(
-        axis.line = element_line(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        panel.border = element_blank(),
-        text = element_text(size = 28),
-        legend.position = c(0.75, 0.2),
-        axis.text = element_text(size = 28),
-        axis.title.x = element_text(size = 32), # X-axis title size
-        axis.title.y = element_text(size = 32, face = "bold"), # Y-axis title bold
-        legend.text = element_text(size = 28), # Legend text larger
+svg("I:/SVG/MFs_v3_bayes/withPartialResid/coverANDType.svg", width = 9, height = 9)
 
-    )
+ggplot() +
+  # Add partial residuals first (as background points)
+  geom_point(
+    data = model_data,
+    aes(x = cover_original, y = partial_resid, color = type),
+    alpha = 0.15, # More transparent than original
+    size = 2.5 # Slightly larger points
+  ) +
+  # Your original marginal effects plot layers
+  geom_ribbon(
+    data = cover_type,
+    aes(x = cover_original, ymin = conf.low, ymax = conf.high, fill = group),
+    alpha = 0.5
+  ) +
+  geom_line(
+    data = cover_type,
+    aes(x = cover_original, y = predicted, color = group),
+    size = 1.5
+  ) +
+  # Your existing formatting
+  labs(
+    x = "Tree cover density (%)",
+    y = "Multifunctionality index (average)",
+    title = NULL
+  ) +
+  geom_richtext(
+    data = annotations,
+    aes(x = xpos, y = ypos, label = annotateText, hjust = hjustvar, vjust = vjustvar),
+    size = 12, color = "black", fill = NA, label.colour = NA, show.legend = FALSE
+  ) +
+  ylim(0.0, 0.8) +
+  scale_color_manual(
+    values = c("#5159CA", "#C8CA46"),
+    name = "Forest Type"
+  ) +
+  scale_fill_manual(
+    values = c("#5159CA", "#C8CA46"),
+    name = "Forest Type"
+  ) +
+  theme_light() +
+  theme(
+    axis.line = element_line(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    panel.border = element_blank(),
+    text = element_text(size = 28),
+    legend.position = c(0.75, 0.2),
+    axis.text = element_text(size = 28),
+    axis.title.x = element_text(size = 32),
+    axis.title.y = element_text(size = 32, face = "bold"),
+    legend.text = element_text(size = 28)
+  )
 dev.off()
-# save(dat_type, file = "I:/DATA/output/MF_origi/9predictors/forestType_margin.rda")
 
 # 3-way interaction of cover, northness and slope.
 slope5_north_cov <- predict_response(
@@ -144,7 +185,7 @@ slope5_north_cov <- predict_response(
     margin = "mean_mode" 
 )
 slope45_north_cov <- predict_response(
-  mod_bayes_beta02, c("cover", "northness [-1, 0, 1]", "slope[4.127]"),
+  mod_bayes_beta02, c("cover[all]", "northness [-1, 0, 1]", "slope[4.127]"),
     margin = "mean_mode" 
 )
 
@@ -173,6 +214,9 @@ slope45_north_cov$group <- as.character(slope45_north_cov$group)  # Convert fact
 slope45_north_cov$group[slope45_north_cov$group == "1"] <- "North"  # Replace "1" with "North"
 slope45_north_cov$group[slope45_north_cov$group == "-1"] <- "South"  # Replace "1" with "South"
 slope45_north_cov$group[slope45_north_cov$group == "0"] <- "Flat"  # Replace "0" with "Flat"
+head(slope45_north_cov)
+slope45_north_cov <- slope45_north_cov %>%
+  mutate(cover_original = x * sd_cover + mean_cover)  # Reverse standardization
 
 # Create annotations df.
 ci95 <- paste0("CI: ", paste0(ci[15, 1], " - ", ci[15, 2]))
@@ -187,7 +231,7 @@ annotations <- data.frame(
     vjustvar = c(1, 1)
 ) # adjust
 
-svg("I:/SVG/MFs_v3_bayes/slope45_north_cover02.svg", width = 9, height = 9)
+svg("I:/SVG/MFs_v3_bayes/withPartialResid/slope45_north_cover.svg", width = 9, height = 9)
 ggplot(
     slope45_north_cov,
     aes(x = cover_original, y = predicted, fill = group, color = group)

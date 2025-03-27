@@ -14,7 +14,7 @@ load("./Data/10000samples_orig_MF_9predicts.RData")
 predict_s$MF_av <- as.numeric(unlist(predict_s$MF_av))
 predict_s$MF_0.8T <- as.numeric(unlist(predict_s$MF_0.8T))
 predict_s <- as_tibble(predict_s)
-predict_s
+
 
 # data_sampled$pos <- numFactor(data_sampled$x, data_sampled$y)
 # data_sampled$group <- factor(rep(1, nrow(data_sampled)))
@@ -23,10 +23,6 @@ predict_s$type[which(predict_s$type == 1)] <- "Broadleaved forest"
 predict_s$type[which(predict_s$type == 2)] <- "Coniferous forest"
 predict_s$type <- as.factor(predict_s$type)
 head(predict_s)
-hist(predict_s$MF_0.8T)
-hist(predict_s$MF_av)
-min(predict_s$MF_0.8T)
-max(predict_s$MF_0.8T)
 
 # Standardized predictors.
 predict_s$coast <- scale(predict_s$coast)
@@ -37,8 +33,7 @@ predict_s$TWI <- scale(predict_s$TWI)
 predict_s$eastness <- scale(predict_s$eastness)
 predict_s$northness <- scale(predict_s$northness)
 predict_s$cover <- scale(predict_s$cover)
-apply(predict_s, 2, sd)
-mean(predict_s$elevation)
+
 
 # Extract samples
 data_3000 <- sample_n(predict_s, 3000)
@@ -127,6 +122,7 @@ epsilon <- 1e-6
 predict_s$MF_av <- (predict_s$MF_av * (1 - 2 * epsilon)) + epsilon
 max(predict_s$MF_av)
 min(predict_s$MF_av)
+
 data_3000 <- sample_n(predict_s, 3000)
 max(data_3000$MF_av)
 min(data_3000$MF_av)
@@ -153,7 +149,7 @@ mod_bayes_beta <- brm(
 )
 summary(mod_bayes_beta)
 
-#Beta regression with 3 interaction terms.
+# Final selected model:Beta regression with 3 interaction terms.
 mod_bayes_beta02 <- brm(
   MF_av ~ 
     northness * slope * cover +
